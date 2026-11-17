@@ -83,7 +83,7 @@ export const basicsSkills: Skill[] = [
       4: ['对抗中反手网前和反手抽球能稳定使用，失误后可调整。'],
     },
     tags: ['singles', 'doubles', 'defense'],
-    relatedSkillIds: ['forehand-grip', 'grip-transition', 'backhand-net', 'backhand-drive'],
+    relatedSkillIds: ['forehand-grip', 'grip-transition', 'net-shot-bh', 'backhand-drive'],
   },
   {
     id: 'grip-transition',

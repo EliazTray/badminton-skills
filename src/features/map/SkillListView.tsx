@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Sparkles } from 'lucide-react';
-import { getSkillsForDomain } from '../../data';
+import { ChevronRight, Layers, Sparkles } from 'lucide-react';
+import { getBaseSkillsForDomain, getSkillsForDomain, getVariantsForSkill } from '../../data';
 import type { DomainId, SkillTier } from '../../data/schema';
 import { useAppStore } from '../../store/appStore';
 import { getSkillLevel, getUnmetPrerequisites } from '../../lib/progress';
@@ -24,8 +24,11 @@ export function SkillListView({
 }) {
   const progress = useAppStore((state) => state.data.progress);
   const normalizedQuery = query.trim().toLocaleLowerCase('zh-CN');
+  const domainSkills = getSkillsForDomain(domainId);
+  const baseSkills = getBaseSkillsForDomain(domainId);
+  const variantSkills = domainSkills.filter((skill) => Boolean(skill.parentSkillId));
 
-  const skills = getSkillsForDomain(domainId).filter((skill) => {
+  const skills = (normalizedQuery ? [...baseSkills, ...variantSkills] : baseSkills).filter((skill) => {
     if (!normalizedQuery) return true;
     return (
       skill.name.toLocaleLowerCase('zh-CN').includes(normalizedQuery) ||
@@ -61,6 +64,7 @@ export function SkillListView({
               {tierSkills.map((skill) => {
                 const level = getSkillLevel(progress, skill.id);
                 const unmet = getUnmetPrerequisites(skill, progress);
+                const variantCount = getVariantsForSkill(skill.id).length;
 
                 return (
                   <li key={skill.id}>
@@ -80,6 +84,18 @@ export function SkillListView({
                           {skill.contentStatus === 'draft' ? (
                             <span className="rounded-full border border-line px-1.5 py-0.5 text-[9px] font-medium text-faint">
                               草案
+                            </span>
+                          ) : null}
+                          {skill.parentSkillId ? (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-court-soft px-1.5 py-0.5 text-[9px] font-semibold text-court">
+                              <Layers className="h-2.5 w-2.5" />
+                              细分
+                            </span>
+                          ) : null}
+                          {variantCount > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-court-soft px-1.5 py-0.5 text-[9px] font-semibold text-court">
+                              <Layers className="h-2.5 w-2.5" />
+                              {variantCount} 细分
                             </span>
                           ) : null}
                           {unmet.length > 0 ? (

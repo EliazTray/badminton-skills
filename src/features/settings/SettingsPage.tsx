@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Download, HardDrive, Info, LockKeyhole, Upload } from 'lucide-react';
-import { CONTENT_VERSION, ALL_SKILLS } from '../../data';
+import { BASE_SKILLS, CONTENT_VERSION, VARIANT_SKILLS } from '../../data';
 import { DOMAINS } from '../../data/domains';
 import { useAppStore } from '../../store/appStore';
 import { getStorageMode } from '../../store/storage';
@@ -49,7 +49,7 @@ export function SettingsPage() {
           <div>
             <dt className="text-muted">技能节点</dt>
             <dd className="mt-1 font-semibold">
-              {ALL_SKILLS.length} 个 · {DOMAINS.length} 个领域
+              {BASE_SKILLS.length} 主技术 + {VARIANT_SKILLS.length} 细分 · {DOMAINS.length} 个领域
             </dd>
           </div>
           <div>
@@ -93,7 +93,8 @@ export function SettingsPage() {
           <div>
             <h2 className="text-sm font-bold">关于内容</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              技能分类参考常见的羽毛球教学体系；当前 57 个节点中，8 个锚点技能标注为「完整」，其余为 Phase 1 草案。动作描述和等级标准会在你评审后继续修正。
+              技能分类参考常见的羽毛球教学体系；当前 {BASE_SKILLS.length} 个主技术 +{' '}
+              {VARIANT_SKILLS.length} 个首版细分中，8 个锚点技能标注为「完整」，其余为草案。动作描述和等级标准会在你评审后继续修正。
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <a

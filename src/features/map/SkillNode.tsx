@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { ArrowUpLeft, Sparkles } from 'lucide-react';
+import { ArrowUpLeft, Layers, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDomain } from '../../data/domains';
 import { getStatusLabel } from '../../lib/progress';
@@ -11,7 +11,7 @@ import type { SkillFlowNode } from './types';
 
 export function SkillNode({ data, selected }: NodeProps<SkillFlowNode>) {
   const navigate = useNavigate();
-  const { skill, kind, level, href } = data;
+  const { skill, kind, level, href, variantCount } = data;
   const domain = getDomain(skill.domainId);
   const isGhost = kind === 'ghost';
 
@@ -78,7 +78,16 @@ export function SkillNode({ data, selected }: NodeProps<SkillFlowNode>) {
 
       <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
         <LevelPips level={level} size="sm" />
-        <span className="text-[10px] font-semibold tabular-nums text-faint">L{level}</span>
+        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold tabular-nums text-faint">
+          {variantCount > 0 && !isGhost ? (
+            <>
+              <Layers className="h-2.5 w-2.5 text-court" />
+              {variantCount} 细分
+            </>
+          ) : (
+            `L${level}`
+          )}
+        </span>
       </div>
     </div>
   );

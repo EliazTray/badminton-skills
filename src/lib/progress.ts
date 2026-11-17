@@ -1,4 +1,4 @@
-import { ALL_SKILLS, DOMAINS, getAnchorSkill, getSkillsForDomain } from '../data';
+import { ALL_SKILLS, BASE_SKILLS, DOMAINS, VARIANT_SKILLS, getAnchorSkill, getBaseSkillsForDomain } from '../data';
 import type { DomainId, Level, Skill, SkillProgress } from '../data/schema';
 import { LEVEL_NAMES } from '../data/schema';
 
@@ -30,6 +30,9 @@ export interface OverallStats {
   stable: number;
   matchReady: number;
   averageLevel: number;
+  variantTotal: number;
+  variantStarted: number;
+  variantStable: number;
 }
 
 export function getSkillLevel(progress: Record<string, SkillProgress>, skillId: string): Level {
@@ -81,7 +84,7 @@ export function isSkillReady(skill: Skill, progress: Record<string, SkillProgres
 }
 
 export function getFrontierSkills(progress: Record<string, SkillProgress>): Skill[] {
-  return ALL_SKILLS.filter(
+  return BASE_SKILLS.filter(
     (skill) => getSkillLevel(progress, skill.id) < 4 && isSkillReady(skill, progress),
   );
 }
@@ -93,7 +96,7 @@ export function getDomainStats(
   const domain = DOMAINS.find((candidate) => candidate.id === domainId);
   if (!domain) throw new Error(`Unknown domain: ${domainId}`);
 
-  const skills = getSkillsForDomain(domainId);
+  const skills = getBaseSkillsForDomain(domainId);
   const total = skills.length;
   const levels = skills.map((skill) => getSkillLevel(progress, skill.id));
   const started = levels.filter((level) => level > 0).length;
@@ -120,12 +123,16 @@ export function getAllDomainStats(progress: Record<string, SkillProgress>): Doma
 }
 
 export function getOverallStats(progress: Record<string, SkillProgress>): OverallStats {
-  const levels = ALL_SKILLS.map((skill) => getSkillLevel(progress, skill.id));
+  const levels = BASE_SKILLS.map((skill) => getSkillLevel(progress, skill.id));
+  const variantLevels = VARIANT_SKILLS.map((skill) => getSkillLevel(progress, skill.id));
   return {
-    total: ALL_SKILLS.length,
+    total: BASE_SKILLS.length,
     started: levels.filter((level) => level > 0).length,
     stable: levels.filter((level) => level >= 3).length,
     matchReady: levels.filter((level) => level === 4).length,
     averageLevel: levels.reduce<number>((sum, level) => sum + level, 0) / Math.max(levels.length, 1),
+    variantTotal: VARIANT_SKILLS.length,
+    variantStarted: variantLevels.filter((level) => level > 0).length,
+    variantStable: variantLevels.filter((level) => level >= 3).length,
   };
 }

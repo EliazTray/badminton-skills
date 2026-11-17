@@ -230,42 +230,6 @@ export const frontCourtSkills: Skill[] = [
     relatedSkillIds: ['net-shot', 'defensive-lift', 'recovery-step'],
   },
   {
-    id: 'backhand-net',
-    domainId: 'front-court',
-    name: '反手网前球',
-    tier: 'core',
-    contentStatus: 'draft',
-    summary: '用反手握拍处理网前左侧来球，包括反手放网、挑球和推球。',
-    keyPoints: [
-      '反手握拍，拇指顶住拍柄，拍头先伸向来球，身体保持低重心。',
-      '击球时用手指和手腕控制拍面，放网要轻，挑球要送得高而深。',
-      '根据来球高度选择放、推或挑，不要在网前只能被动挑高。',
-    ],
-    commonErrors: [
-      '握拍太紧，反手网前只能弹高，无法控制落点。',
-      '身体没有跟上网，只伸手臂，击球点太远且不稳定。',
-    ],
-    drills: [
-      {
-        name: '反手网前三点',
-        description: '搭档连续喂反手网前球，交替做放网、推球和挑球，每组 15 球。',
-        prescription: '4 组 × 15 球',
-      },
-    ],
-    prerequisites: [
-      { skillId: 'backhand-grip', minLevel: 2 },
-      { skillId: 'net-shot', minLevel: 2 },
-    ],
-    rubric: {
-      1: ['能说出反手网前球的握拍和拍面控制。'],
-      2: ['定点反手放网 10 次，至少 6 个过网并落在前场。'],
-      3: ['反手网前放、推、挑各 10 次，至少 7 次达到预期落点。'],
-      4: ['对抗中能稳定处理反手网前球，并根据对方站位选择放、推或挑。'],
-    },
-    tags: ['singles', 'doubles', 'net', 'defense'],
-    relatedSkillIds: ['backhand-grip', 'net-shot', 'backhand-low-serve'],
-  },
-  {
     id: 'net-cover',
     domainId: 'front-court',
     name: '封网',

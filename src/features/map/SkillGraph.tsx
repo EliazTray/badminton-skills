@@ -8,6 +8,7 @@ import {
   type Edge,
 } from '@xyflow/react';
 import type { DomainId } from '../../data/schema';
+import { getVariantsForSkill } from '../../data';
 import { buildDomainGraph } from '../../lib/graph';
 import { useMediaQuery } from '../../lib/useMediaQuery';
 import { useAppStore } from '../../store/appStore';
@@ -33,6 +34,7 @@ export function SkillGraph({ domainId }: { domainId: DomainId }) {
           kind: node.kind,
           level: node.level,
           ready: node.ready,
+          variantCount: node.kind === 'main' ? getVariantsForSkill(node.skill.id).length : 0,
           href: `/map/${node.skill.id}?domain=${domainId}`,
         },
         style: {

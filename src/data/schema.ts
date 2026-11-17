@@ -28,6 +28,12 @@ export type SkillTag = (typeof SKILL_TAGS)[number];
 export const CONTENT_STATUSES = ['complete', 'draft'] as const;
 export type ContentStatus = (typeof CONTENT_STATUSES)[number];
 
+export const SKILL_ROLES = ['base', 'specialized'] as const;
+export type SkillRole = (typeof SKILL_ROLES)[number];
+
+export const TERM_STATUSES = ['common', 'coach', 'needs-review'] as const;
+export type TermStatus = (typeof TERM_STATUSES)[number];
+
 export const SESSION_TYPES = ['课程', '多球', '对抗', '比赛', '步法/体能', '自主练习'] as const;
 export type SessionType = (typeof SESSION_TYPES)[number];
 
@@ -96,6 +102,10 @@ export const SkillSchema = z.object({
   name: z.string().min(1),
   tier: z.enum(TIERS),
   isAnchor: z.boolean().optional(),
+  parentSkillId: z.string().min(1).optional(),
+  role: z.enum(SKILL_ROLES).optional(),
+  aliases: z.array(z.string().min(1)).optional(),
+  termStatus: z.enum(TERM_STATUSES).optional(),
   contentStatus: z.enum(CONTENT_STATUSES),
   summary: z.string().min(1),
   keyPoints: z.array(z.string().min(1)).min(3),

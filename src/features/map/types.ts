@@ -8,6 +8,7 @@ export interface SkillNodeData extends Record<string, unknown> {
   kind: SkillNodeKind;
   level: Level;
   ready: boolean;
+  variantCount: number;
   href: string;
 }
 

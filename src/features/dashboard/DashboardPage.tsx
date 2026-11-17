@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
   CircleDot,
+  Layers,
   Network,
   Sparkles,
   Target,
@@ -23,6 +24,7 @@ import { LevelPips } from '../../components/ui/LevelPips';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { cn } from '../../lib/cn';
 import { getDomain } from '../../data/domains';
+import { BASE_SKILLS, VARIANT_SKILLS } from '../../data';
 import type { Skill, SkillProgress } from '../../data/schema';
 
 interface Suggestion {
@@ -73,13 +75,20 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section aria-label="总览数据" className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section aria-label="总览数据" className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <StatCard
           icon={CircleDot}
-          label="已点亮"
+          label="主技术点亮"
           value={`${overall.started}`}
           suffix={`/ ${overall.total}`}
           hint="至少标记过 1 级"
+        />
+        <StatCard
+          icon={Layers}
+          label="细分技术"
+          value={`${overall.variantStarted}`}
+          suffix={`/ ${overall.variantTotal}`}
+          hint="独立评级的细分"
         />
         <StatCard
           icon={TrendingUp}
@@ -100,7 +109,7 @@ export function DashboardPage() {
           label="平均等级"
           value={overall.averageLevel.toFixed(1)}
           suffix="/ 4"
-          hint="全部技能的平均值"
+          hint="主技术的平均值"
         />
       </section>
 
@@ -219,7 +228,7 @@ export function DashboardPage() {
           <div>
             <h2 className="text-sm font-bold">Phase 1 正在搭建图谱地基</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-              当前可以浏览 57 个技能、查看前置关系，并给 8 个锚点技能标记起点。完整评估、训练记录和推荐会在下一阶段接入。
+              当前可以浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，并给锚点和细分标记起点。完整评估、训练记录和推荐会在下一阶段接入。
             </p>
           </div>
         </div>

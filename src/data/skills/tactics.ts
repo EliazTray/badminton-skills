@@ -270,4 +270,41 @@ export const tacticsSkills: Skill[] = [
     tags: ['singles', 'doubles'],
     relatedSkillIds: ['error-management', 'four-corners'],
   },
+  {
+    id: 'rotation',
+    domainId: 'tactics',
+    name: '轮转',
+    tier: 'advanced',
+    contentStatus: 'draft',
+    summary: '双打中根据球路从前后进攻转成左右防守，再转回进攻，不留下大空当。',
+    keyPoints: [
+      '起高球或挑球后，前场队员后退，后场队员上前，两人转成左右防守。',
+      '得到下压机会后，击球者跟进前场，搭档补到后场，转回前后进攻。',
+      '轮转时用简单口令或手势沟通，谁先动、谁补位要明确。',
+    ],
+    commonErrors: [
+      '起高球后前场还站在原地，后场队员一个人防全场。',
+      '两人同时向前或同时后退，轮转路线交叉，撞在一起。',
+    ],
+    drills: [
+      {
+        name: '攻防轮转循环',
+        description: '从前后站位开始，后场起高球，两人转左右防守；挡网后前场跟进，再转回前后。',
+        prescription: '4 组 × 10 个循环',
+      },
+    ],
+    prerequisites: [
+      { skillId: 'front-back-formation', minLevel: 2 },
+      { skillId: 'side-defense', minLevel: 2 },
+      { skillId: 'flat-drive', minLevel: 2 },
+    ],
+    rubric: {
+      1: ['能说出前后进攻和左右防守之间的转换方向。'],
+      2: ['无球时能和搭档完成一次攻防轮转。'],
+      3: ['连续 10 个攻防转换，至少 7 次两人能到位，不出现明显空当。'],
+      4: ['双打对抗中轮转自然，不因换位让球或撞拍，能连续保持阵型。'],
+    },
+    tags: ['doubles', 'attack', 'defense'],
+    relatedSkillIds: ['front-back-formation', 'side-defense', 'attack-defense-transition'],
+  },
 ];

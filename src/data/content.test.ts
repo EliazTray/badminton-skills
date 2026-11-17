@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_SKILLS, CATALOG_ISSUES, CONTENT_VERSION, DOMAINS } from './index';
+import { ALL_SKILLS, BASE_SKILLS, CATALOG_ISSUES, CONTENT_VERSION, DOMAINS, VARIANT_SKILLS } from './index';
 import type { Skill } from './schema';
 import { validateCatalog } from './validate';
 
@@ -7,24 +7,46 @@ const EXPECTED_DOMAIN_COUNTS: Record<string, number> = {
   basics: 5,
   footwork: 8,
   'serve-receive': 6,
-  'rear-court': 9,
-  'front-court': 8,
-  'midcourt-defense': 8,
-  doubles: 6,
-  tactics: 7,
+  'rear-court': 6,
+  'front-court': 7,
+  'midcourt-defense': 6,
+  doubles: 5,
+  tactics: 8,
 };
 
 describe('skill catalog', () => {
-  it('contains 8 domains and 57 skills', () => {
+  it('contains 8 domains, 56 base skills, and 44 first-batch variants', () => {
     expect(DOMAINS).toHaveLength(8);
-    expect(ALL_SKILLS).toHaveLength(57);
+    expect(BASE_SKILLS).toHaveLength(51);
+    expect(VARIANT_SKILLS).toHaveLength(49);
+    expect(ALL_SKILLS).toHaveLength(100);
     expect(CONTENT_VERSION).toMatch(/^\d{4}\.\d{2}\.\d{1,2}$/);
   });
 
-  it('has the expected number of skills in every domain', () => {
+  it('has the expected number of base skills in every domain', () => {
     for (const domain of DOMAINS) {
-      const count = ALL_SKILLS.filter((skill) => skill.domainId === domain.id).length;
+      const count = BASE_SKILLS.filter((skill) => skill.domainId === domain.id).length;
       expect(count, domain.name).toBe(EXPECTED_DOMAIN_COUNTS[domain.id]);
+    }
+  });
+
+  it('keeps variants attached to existing base skills in the same domain', () => {
+    expect(VARIANT_SKILLS.map((skill) => skill.name)).toEqual(
+      expect.arrayContaining(['正手收搓', '正手展搓', '反手收搓', '反手展搓']),
+    );
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'net-spin')).toHaveLength(4);
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'lift')).toHaveLength(5);
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'rotation')).toHaveLength(2);
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'forehand-drop')).toHaveLength(6);
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'smash')).toHaveLength(4);
+    expect(VARIANT_SKILLS.filter((skill) => skill.parentSkillId === 'flat-drive')).toHaveLength(2);
+
+    for (const variant of VARIANT_SKILLS) {
+      expect(variant.role).toBe('specialized');
+      const parent = ALL_SKILLS.find((skill) => skill.id === variant.parentSkillId);
+      expect(parent, variant.name).toBeDefined();
+      expect(parent?.domainId, variant.name).toBe(variant.domainId);
+      expect(parent?.parentSkillId).toBeUndefined();
     }
   });
 

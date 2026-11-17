@@ -45,6 +45,52 @@ export function validateCatalog(skills: Skill[]): CatalogIssue[] {
       issues.push({ code: 'self-reference', message: `${skill.name} 不能以自己为前置` });
     }
 
+    if (skill.parentSkillId) {
+      const parent = byId.get(skill.parentSkillId);
+      if (!parent) {
+        issues.push({
+          code: 'missing-parent',
+          message: `${skill.name} 的父技术 ${skill.parentSkillId} 不存在`,
+        });
+      } else {
+        if (parent.id === skill.id) {
+          issues.push({ code: 'self-parent', message: `${skill.name} 不能以自己为父技术` });
+        }
+        if (parent.parentSkillId) {
+          issues.push({
+            code: 'nested-parent',
+            message: `${skill.name} 当前只支持一层细分，父技术 ${parent.name} 不能也是细分`,
+          });
+        }
+        if (parent.domainId !== skill.domainId) {
+          issues.push({
+            code: 'parent-domain',
+            message: `${skill.name} 和父技术 ${parent.name} 必须在同一领域`,
+          });
+        }
+        if (skill.isAnchor) {
+          issues.push({
+            code: 'variant-anchor',
+            message: `${skill.name} 是细分技术，不能同时作为领域锚点`,
+          });
+        }
+      }
+    }
+
+    if (skill.role === 'specialized' && !skill.parentSkillId) {
+      issues.push({
+        code: 'missing-parent-role',
+        message: `${skill.name} 标记为 specialized，但没有 parentSkillId`,
+      });
+    }
+
+    if (skill.role === 'base' && skill.parentSkillId) {
+      issues.push({
+        code: 'base-with-parent',
+        message: `${skill.name} 标记为 base，但又有 parentSkillId`,
+      });
+    }
+
     for (const prerequisite of skill.prerequisites) {
       const target = byId.get(prerequisite.skillId);
       if (!target) {

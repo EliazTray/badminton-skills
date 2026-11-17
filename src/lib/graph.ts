@@ -1,5 +1,5 @@
 import dagre from '@dagrejs/dagre';
-import { ALL_SKILLS, SKILL_BY_ID, getSkillsForDomain } from '../data';
+import { BASE_SKILLS, SKILL_BY_ID, getBaseSkillsForDomain } from '../data';
 import type { DomainId, Level, Skill, SkillProgress } from '../data/schema';
 import { getSkillLevel, isSkillReady } from './progress';
 
@@ -65,7 +65,7 @@ export function getDescendantCount(skillId: string): number {
   while (queue.length > 0) {
     const current = queue.shift();
     if (!current) continue;
-    for (const skill of ALL_SKILLS) {
+    for (const skill of BASE_SKILLS) {
       if (skill.prerequisites.some((prerequisite) => prerequisite.skillId === current)) {
         if (!descendants.has(skill.id)) {
           descendants.add(skill.id);
@@ -82,7 +82,7 @@ export function buildDomainGraph(
   domainId: DomainId,
   progress: Record<string, SkillProgress>,
 ): DomainGraph {
-  const mainSkills = getSkillsForDomain(domainId);
+  const mainSkills = getBaseSkillsForDomain(domainId);
   const mainIds = new Set(mainSkills.map((skill) => skill.id));
   const ghostIds = new Set<string>();
 

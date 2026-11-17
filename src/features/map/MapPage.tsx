@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { DOMAINS, DOMAIN_BY_ID } from '../../data/domains';
+import { BASE_SKILLS, VARIANT_SKILLS } from '../../data';
 import type { DomainId } from '../../data/schema';
 import { DOMAIN_ID_VALUES, LEVEL_NAMES } from '../../data/schema';
 import { useAppStore } from '../../store/appStore';
@@ -128,7 +129,7 @@ export function MapPage() {
         ) : (
           <div className="hidden items-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-xs text-muted md:flex">
             <Sparkles className="h-3.5 w-3.5 text-court" />
-            8 个领域 · 57 个技能节点
+            8 个领域 · {BASE_SKILLS.length} 主技术 · {VARIANT_SKILLS.length} 细分
           </div>
         )}
       </header>

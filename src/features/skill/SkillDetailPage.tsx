@@ -8,12 +8,13 @@ import {
   Circle,
   Dumbbell,
   History,
+  Layers,
   ListChecks,
   Sparkles,
   Target,
   type LucideIcon,
 } from 'lucide-react';
-import { getSkill } from '../../data';
+import { getSkill, getVariantsForSkill } from '../../data';
 import { getDomain } from '../../data/domains';
 import type { Assessment, Level, Skill } from '../../data/schema';
 import { LEVEL_DESCRIPTIONS, LEVEL_NAMES } from '../../data/schema';
@@ -31,7 +32,7 @@ import { LevelPips } from '../../components/ui/LevelPips';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { cn } from '../../lib/cn';
 
-type TabId = 'overview' | 'rubric' | 'practice' | 'history';
+type TabId = 'overview' | 'rubric' | 'practice' | 'variants' | 'history';
 
 const TABS: Array<{ id: TabId; label: string; icon: LucideIcon }> = [
   { id: 'overview', label: '概览', icon: BookOpen },
@@ -90,6 +91,19 @@ export function SkillDetailPage() {
   const prerequisites = getPrerequisiteStates(skill, progress);
   const unmet = getUnmetPrerequisites(skill, progress);
   const descendants = getDescendantCount(skill.id);
+  const variants = getVariantsForSkill(skill.id);
+  const parentSkill = skill.parentSkillId ? getSkill(skill.parentSkillId) : undefined;
+  const tabs =
+    variants.length > 0
+      ? [
+          TABS[0],
+          TABS[1],
+          TABS[2],
+          { id: 'variants' as const, label: `细分 ${variants.length}`, icon: Layers },
+          TABS[3],
+        ]
+      : TABS;
+  const activeTab = tab === 'variants' && variants.length === 0 ? 'overview' : tab;
   const assessments = [...(progress[skill.id]?.assessments ?? [])].sort(
     (a, b) => b.date.localeCompare(a.date),
   );
@@ -132,6 +146,21 @@ export function SkillDetailPage() {
                 内容草案
               </span>
             ) : null}
+            {parentSkill ? (
+              <Link
+                to={`/map/${parentSkill.id}?domain=${parentSkill.domainId}`}
+                className="inline-flex items-center gap-1 rounded-full bg-court-soft px-2 py-1 text-[10px] font-semibold text-court hover:underline"
+              >
+                <Layers className="h-3 w-3" />
+                细分自 {parentSkill.name}
+              </Link>
+            ) : null}
+            {variants.length > 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-court-soft px-2 py-1 text-[10px] font-semibold text-court">
+                <Layers className="h-3 w-3" />
+                {variants.length} 个细分
+              </span>
+            ) : null}
           </div>
 
           <h1 className="mt-3 text-3xl font-bold tracking-tight">{skill.name}</h1>
@@ -155,7 +184,7 @@ export function SkillDetailPage() {
       <LevelCard
         skill={skill}
         level={level}
-        isAnchor={Boolean(skill.isAnchor)}
+        canQuickMark={Boolean(skill.isAnchor || skill.parentSkillId || variants.length > 0)}
         onSelect={(nextLevel) => setQuickLevel(skill.id, nextLevel)}
       />
 
@@ -166,9 +195,9 @@ export function SkillDetailPage() {
             role="tablist"
             aria-label="技能详情分区"
           >
-            {TABS.map((item) => {
+            {tabs.map((item) => {
               const Icon = item.icon;
-              const active = tab === item.id;
+              const active = activeTab === item.id;
               return (
                 <button
                   key={item.id}
@@ -193,7 +222,7 @@ export function SkillDetailPage() {
           </div>
 
           <div className="p-5 md:p-6">
-            {tab === 'overview' ? (
+            {activeTab === 'overview' ? (
               <div
                 role="tabpanel"
                 id="panel-overview"
@@ -228,7 +257,7 @@ export function SkillDetailPage() {
               </div>
             ) : null}
 
-            {tab === 'rubric' ? (
+            {activeTab === 'rubric' ? (
               <div
                 role="tabpanel"
                 id="panel-rubric"
@@ -310,7 +339,7 @@ export function SkillDetailPage() {
               </div>
             ) : null}
 
-            {tab === 'practice' ? (
+            {activeTab === 'practice' ? (
               <div
                 role="tabpanel"
                 id="panel-practice"
@@ -349,7 +378,60 @@ export function SkillDetailPage() {
               </div>
             ) : null}
 
-            {tab === 'history' ? (
+            {activeTab === 'variants' ? (
+              <div
+                role="tabpanel"
+                id="panel-variants"
+                aria-labelledby="tab-variants"
+                className="space-y-4"
+              >
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">细分技术</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted">
+                    {skill.name}下的{` ${variants.length} `}个细分。每个细分独立按 0–4 级记录，点进去可以查看要点、练习和等级。
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {variants.map((variant) => {
+                    const variantLevel = getSkillLevel(progress, variant.id);
+                    const variantUnmet = getUnmetPrerequisites(variant, progress);
+                    return (
+                      <Link
+                        key={variant.id}
+                        to={`/map/${variant.id}?domain=${skill.domainId}`}
+                        className="group rounded-2xl border border-line bg-bg/40 p-4 transition-colors hover:border-court/40 hover:bg-surface2/40"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-bold tracking-tight group-hover:text-court">
+                              {variant.name}
+                            </h3>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">
+                              {variant.summary}
+                            </p>
+                          </div>
+                          <StatusBadge level={variantLevel} className="shrink-0" />
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <LevelPips level={variantLevel} size="sm" />
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-faint">
+                            {variantUnmet.length > 0 ? '前置待补' : '查看细分'}
+                            <ArrowUpRight className="h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
+                  细分技术当前是可快速标记的草案内容。先独立记录等级，后续再把训练记录、成功率和完整 rubric 评估接进来。
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === 'history' ? (
               <div
                 role="tabpanel"
                 id="panel-history"
@@ -512,12 +594,12 @@ export function SkillDetailPage() {
 function LevelCard({
   skill,
   level,
-  isAnchor,
+  canQuickMark,
   onSelect,
 }: {
   skill: Skill;
   level: Level;
-  isAnchor: boolean;
+  canQuickMark: boolean;
   onSelect: (level: Level) => void;
 }) {
   return (
@@ -538,7 +620,7 @@ function LevelCard({
           </div>
         </div>
 
-        {isAnchor ? (
+        {canQuickMark ? (
           <div className="shrink-0">
             <div
               className="grid grid-cols-5 gap-1.5 rounded-2xl border border-line bg-bg/50 p-1.5"
@@ -569,15 +651,17 @@ function LevelCard({
               })}
             </div>
             <p className="mt-2 max-w-[280px] text-right text-[10px] leading-4 text-faint">
-              Phase 1 快速标记为起点估值；完整标准评估将在 Phase 2 接入。
+              {skill.isAnchor
+                ? 'Phase 1 快速标记为起点估值；完整标准评估将在 Phase 2 接入。'
+                : skill.parentSkillId
+                  ? '细分技术可独立标记；完整标准评估将在 Phase 2 接入。'
+                  : '主技术可快速标记；细分技术可在「细分」页签独立标记。'}
             </p>
           </div>
         ) : (
           <div className="max-w-xs rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
             <p className="font-semibold text-ink">完整评估将在 Phase 2 开放</p>
-            <p className="mt-1">
-              当前节点内容为草案，可以查看要点与标准；{skill.isAnchor ? '' : '暂不支持标记等级。'}
-            </p>
+            <p className="mt-1">当前节点内容为草案，可以查看要点与标准；暂不支持标记等级。</p>
           </div>
         )}
       </div>

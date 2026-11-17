@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, ClipboardList, Milestone } from 'lucide-react';
+import { BASE_SKILLS, VARIANT_SKILLS } from '../../data';
 import { buttonClassName } from '../../components/ui/buttonStyles';
 
 export function LogPage() {
@@ -19,7 +20,7 @@ export function LogPage() {
         </span>
         <h2 className="mt-5 text-lg font-bold tracking-tight">先把图谱的起点标出来</h2>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-          Phase 1 先解决「我在哪」的问题：浏览 57 个技能、查看前置关系、给 8 个锚点技能标记起点。训练记录、成功率和视频链接会在下一阶段加入。
+          Phase 1 先解决「我在哪」的问题：浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，给锚点和细分标记起点。训练记录、成功率和视频链接会在下一阶段加入。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link to="/map" className={buttonClassName('primary')}>

@@ -1,15 +1,23 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ALL_SKILLS, CONTENT_VERSION, DOMAINS, getAnchorSkill } from '../src/data';
+import {
+  ALL_SKILLS,
+  BASE_SKILLS,
+  CONTENT_VERSION,
+  DOMAINS,
+  VARIANT_SKILLS,
+  getAnchorSkill,
+} from '../src/data';
 
 const byId = new Map(ALL_SKILLS.map((skill) => [skill.id, skill]));
 const tierLabels = { foundation: '基础', core: '进阶', advanced: '实战' } as const;
 const statusLabels = { complete: '完整', draft: '草案' } as const;
+const termLabels = { common: '通用', coach: '教练常用', 'needs-review': '待校对' } as const;
 
 const lines: string[] = [
   '# 羽球技能目录',
   '',
-  `> 内容版本：${CONTENT_VERSION} · ${ALL_SKILLS.length} 个技能 · ${DOMAINS.length} 个领域`,
+  `> 内容版本：${CONTENT_VERSION} · ${BASE_SKILLS.length} 个主技术 + ${VARIANT_SKILLS.length} 个细分 · ${DOMAINS.length} 个领域`,
   '',
   '本文件由 `npm run catalog:generate` 从技能数据生成，用于内容和前置关系评审。',
   '',
@@ -25,20 +33,23 @@ const lines: string[] = [
   '',
   '## 领域总览',
   '',
-  '| 领域 | 技能数 | 锚点 |',
-  '|---|---:|---|',
+  '| 领域 | 主技术数 | 细分技术数 | 锚点 |',
+  '|---|---:|---:|---|',
 ];
 
 for (const domain of DOMAINS) {
-  const skills = ALL_SKILLS.filter((skill) => skill.domainId === domain.id);
+  const baseSkills = BASE_SKILLS.filter((skill) => skill.domainId === domain.id);
+  const variants = VARIANT_SKILLS.filter((skill) => skill.domainId === domain.id);
   const anchor = getAnchorSkill(domain.id);
-  lines.push(`| ${domain.name} | ${skills.length} | ${anchor?.name ?? '—'} |`);
+  lines.push(
+    `| ${domain.name} | ${baseSkills.length} | ${variants.length} | ${anchor?.name ?? '—'} |`,
+  );
 }
 
 for (const domain of DOMAINS) {
-  const skills = ALL_SKILLS.filter((skill) => skill.domainId === domain.id);
+  const skills = BASE_SKILLS.filter((skill) => skill.domainId === domain.id);
   lines.push('', `## ${domain.name}`, '', domain.description, '');
-  lines.push('| 技能 | 层级 | 锚点 | 前置 | 内容 |');
+  lines.push('| 主技术 | 层级 | 锚点 | 前置 | 内容 |');
   lines.push('|---|---|---|---|---|');
 
   for (const skill of skills) {
@@ -50,6 +61,20 @@ for (const domain of DOMAINS) {
             .join('、');
     lines.push(
       `| ${skill.name} | ${tierLabels[skill.tier]} | ${skill.isAnchor ? '★' : ''} | ${prerequisites} | ${statusLabels[skill.contentStatus]} |`,
+    );
+  }
+}
+
+lines.push('', '## 细分技术', '');
+lines.push('| 领域 | 主技术 | 细分技术 | 术语状态 | 内容 |');
+lines.push('|---|---|---|---|---|');
+
+for (const domain of DOMAINS) {
+  const variants = VARIANT_SKILLS.filter((skill) => skill.domainId === domain.id);
+  for (const variant of variants) {
+    const parent = variant.parentSkillId ? byId.get(variant.parentSkillId) : undefined;
+    lines.push(
+      `| ${domain.name} | ${parent?.name ?? '—'} | ${variant.name} | ${termLabels[variant.termStatus ?? 'needs-review']} | ${statusLabels[variant.contentStatus]} |`,
     );
   }
 }
@@ -73,14 +98,17 @@ for (const domain of DOMAINS) {
 lines.push(
   '## 评审重点',
   '',
-  '- 节点分类是否符合你的实际训练顺序；有没有明显缺失或过早出现的技能。',
+  '- 主技术分类是否符合你的实际训练顺序；有没有明显缺失或过早出现的技能。',
   '- 前置关系是否过严或过松；跨领域前置是否合理。',
+  '- 细分技术是否挂在正确的主技术下，是否需要补充或删除。',
   '- 锚点的 3 / 4 级标准是否可观察、可自测，而不是主观感受。',
-  '- 术语是否使用你熟悉的叫法（例如头顶球、滑板吊、平抽挡）。',
+  '- 术语是否使用你熟悉的叫法；标为「待校对」的术语需要后续确认。',
   '',
 );
 
 const docsDir = resolve(process.cwd(), 'docs');
 mkdirSync(docsDir, { recursive: true });
 writeFileSync(resolve(docsDir, 'skill-catalog.md'), `${lines.join('\n')}\n`, 'utf8');
-console.log(`Wrote docs/skill-catalog.md (${ALL_SKILLS.length} skills)`);
+console.log(
+  `Wrote docs/skill-catalog.md (${BASE_SKILLS.length} base + ${VARIANT_SKILLS.length} variants)`,
+);
