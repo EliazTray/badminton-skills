@@ -1,15 +1,67 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Download, HardDrive, Info, LockKeyhole, Upload } from 'lucide-react';
 import { BASE_SKILLS, CONTENT_VERSION, VARIANT_SKILLS } from '../../data';
 import { DOMAINS } from '../../data/domains';
 import { useAppStore } from '../../store/appStore';
 import { getStorageMode } from '../../store/storage';
+import {
+  bundleToAppData,
+  createExportBundle,
+  downloadExportBundle,
+  parseImportBundle,
+} from '../../lib/backup';
 import { buttonClassName } from '../../components/ui/buttonStyles';
+
+interface DataMessage {
+  kind: 'ok' | 'error';
+  text: string;
+}
 
 export function SettingsPage() {
   const data = useAppStore((state) => state.data);
+  const importData = useAppStore((state) => state.importData);
+  const markBackup = useAppStore((state) => state.markBackup);
   const storageMode = getStorageMode();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dataMessage, setDataMessage] = useState<DataMessage | null>(null);
   const levels = Object.values(data.progress).filter((item) => item.level > 0).length;
+
+  const handleExport = () => {
+    const bundle = createExportBundle(data);
+    downloadExportBundle(bundle);
+    markBackup();
+    setDataMessage({ kind: 'ok', text: '已导出 JSON 备份文件。' });
+  };
+
+  const handleImportFile = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      setDataMessage({ kind: 'error', text: '文件超过 5 MB，未导入。' });
+      return;
+    }
+
+    try {
+      const bundle = parseImportBundle(await file.text());
+      const confirmed = window.confirm(
+        `导入会覆盖当前数据。\n\n文件包含 ${Object.keys(bundle.progress).length} 条技能进度、${bundle.sessions.length} 条训练记录。\n内容版本：${bundle.contentVersion}\n\n继续导入？`,
+      );
+      if (!confirmed) return;
+
+      importData(bundleToAppData(bundle));
+      setDataMessage({
+        kind: 'ok',
+        text:
+          bundle.contentVersion === CONTENT_VERSION
+            ? '导入完成。'
+            : `导入完成，但文件内容版本是 ${bundle.contentVersion}，当前版本是 ${CONTENT_VERSION}，请检查技能对应关系。`,
+      });
+    } catch (error) {
+      setDataMessage({
+        kind: 'error',
+        text: error instanceof Error ? `导入失败：${error.message}` : '导入失败：文件格式不正确。',
+      });
+    }
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -69,22 +121,56 @@ export function SettingsPage() {
             <LockKeyhole className="h-5 w-5" />
           </span>
           <div>
-            <h2 className="text-sm font-bold">备份与导入将在 Phase 4 接入</h2>
+            <h2 className="text-sm font-bold">数据备份</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              目前还没有正式的导出 / 导入界面。在加入备份前，不建议把这里当作唯一记录；完整等级评估已接入，Phase 4 会做 JSON 导出、导入和恢复快照。
+              导出的 JSON 会包含技能等级、评估历史、备注和训练记录。数据只存在当前浏览器，清理站点数据前请先导出。
+            </p>
+            <p className="mt-2 text-[11px] font-medium text-faint">
+              最近备份：{data.settings.lastBackupAt ?? '还没有导出过'}
             </p>
           </div>
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          <button type="button" disabled className={buttonClassName('secondary', 'w-full')}>
+          <button type="button" onClick={handleExport} className={buttonClassName('primary', 'w-full')}>
             <Download className="h-4 w-4" />
-            导出 JSON（即将开放）
+            导出 JSON
           </button>
-          <button type="button" disabled className={buttonClassName('secondary', 'w-full')}>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className={buttonClassName('secondary', 'w-full')}
+          >
             <Upload className="h-4 w-4" />
-            导入 JSON（即将开放）
+            导入 JSON
           </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            aria-label="选择备份 JSON 文件"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = '';
+              if (file) void handleImportFile(file);
+            }}
+          />
         </div>
+        {dataMessage ? (
+          <p
+            className={
+              dataMessage.kind === 'ok'
+                ? 'mt-3 rounded-xl bg-court-soft/60 px-3 py-2 text-xs leading-5 text-court'
+                : 'mt-3 rounded-xl bg-amber-soft/60 px-3 py-2 text-xs leading-5 text-amber'
+            }
+            role="status"
+          >
+            {dataMessage.text}
+          </p>
+        ) : null}
+        <p className="mt-3 text-[11px] leading-5 text-faint">
+          导入会覆盖当前档案；导入前建议先导出一次当前数据。视频只保存外部链接，不会包含视频文件。
+        </p>
       </section>
 
       <section className="app-card p-5 md:p-6">

@@ -25,6 +25,8 @@ interface AppStore {
   setStorageWarning: (warning?: string) => void;
   setQuickLevel: (skillId: string, level: Level) => void;
   assessSkill: (skillId: string, input: AssessSkillInput) => void;
+  importData: (data: AppData) => void;
+  markBackup: () => void;
 }
 
 function createId(): string {
@@ -113,6 +115,23 @@ export const useAppStore = create<AppStore>()(
         });
 
         void requestPersistentStorage();
+      },
+
+      importData: (data) => {
+        set({ data });
+        void requestPersistentStorage();
+      },
+
+      markBackup: () => {
+        set((state) => ({
+          data: {
+            ...state.data,
+            settings: {
+              ...state.data.settings,
+              lastBackupAt: todayISO(),
+            },
+          },
+        }));
       },
     }),
     {
