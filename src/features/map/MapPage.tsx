@@ -177,7 +177,7 @@ function DomainAtlas({ stats }: { stats: ReturnType<typeof getAllDomainStats> })
           <div>
             <h2 className="text-sm font-bold">如何看这张图</h2>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-muted">
-              每个领域是一张有向无环图：实线代表前置已满足，虚线代表还需要补前置。虚线框是跨领域前置，点击可以跳转。手机默认列表视图，图谱作为次级视图。
+              每个领域是一张有向无环图：实线代表前置已满足，虚线代表还需要补前置。虚线框是跨领域前置，点击可以跳转。节点右下角的 <span className="font-semibold text-court">+N 细分</span> 可以展开该技术的细分，默认折叠；手机默认列表视图，图谱作为次级视图。
             </p>
           </div>
         </div>
@@ -410,7 +410,7 @@ function DomainView({
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded border border-dashed border-faint" /> 跨领域前置
             </span>
-            <span className="text-faint">· 点击节点查看要点与等级标准</span>
+            <span className="text-faint">· 点 +N 展开细分 / 点节点进入详情</span>
             <span className="text-faint md:hidden">· 双指缩放 / 拖动查看</span>
           </div>
         </div>

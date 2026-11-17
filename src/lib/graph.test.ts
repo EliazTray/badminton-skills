@@ -87,4 +87,17 @@ describe('graph helpers', () => {
       );
     }
   });
+
+  it('only adds variant nodes when their parent is expanded', () => {
+    const collapsed = buildDomainGraph('front-court', {});
+    expect(collapsed.nodes.some((node) => node.id === 'net-spin-fh-open')).toBe(false);
+
+    const expanded = buildDomainGraph('front-court', {}, 'net-spin');
+    const variant = expanded.nodes.find((node) => node.id === 'net-spin-fh-open');
+    expect(variant?.kind).toBe('variant');
+
+    const variantEdges = expanded.edges.filter((edge) => edge.kind === 'variant');
+    expect(variantEdges.length).toBe(4);
+    expect(variantEdges.every((edge) => edge.source === 'net-spin')).toBe(true);
+  });
 });

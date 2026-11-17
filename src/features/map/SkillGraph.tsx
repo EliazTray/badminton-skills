@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -20,53 +20,86 @@ const nodeTypes = { skill: SkillNode };
 export function SkillGraph({ domainId }: { domainId: DomainId }) {
   const progress = useAppStore((state) => state.data.progress);
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [expandedSkillId, setExpandedSkillId] = useState<string | null>(null);
 
-  const graph = useMemo(() => buildDomainGraph(domainId, progress), [domainId, progress]);
+  const graph = useMemo(
+    () => buildDomainGraph(domainId, progress, expandedSkillId),
+    [domainId, progress, expandedSkillId],
+  );
 
   const nodes = useMemo<SkillFlowNode[]>(
     () =>
-      graph.nodes.map((node) => ({
-        id: node.id,
-        type: 'skill',
-        position: node.position,
-        data: {
-          skill: node.skill,
-          kind: node.kind,
-          level: node.level,
-          ready: node.ready,
-          variantCount: node.kind === 'main' ? getVariantsForSkill(node.skill.id).length : 0,
-          href: `/map/${node.skill.id}?domain=${domainId}`,
-        },
-        style: {
-          width: node.kind === 'ghost' ? 168 : 208,
-          height: node.kind === 'ghost' ? 86 : 98,
-        },
-        draggable: false,
-        selectable: true,
-      })),
-    [domainId, graph.nodes],
+      graph.nodes.map((node) => {
+        const variantCount =
+          node.kind === 'main' ? getVariantsForSkill(node.skill.id).length : 0;
+        return {
+          id: node.id,
+          type: 'skill',
+          position: node.position,
+          data: {
+            skill: node.skill,
+            kind: node.kind,
+            level: node.level,
+            ready: node.ready,
+            variantCount,
+            expanded: expandedSkillId === node.id,
+            href: `/map/${node.skill.id}?domain=${domainId}`,
+            onToggleVariants:
+              variantCount > 0
+                ? () =>
+                    setExpandedSkillId((current) =>
+                      current === node.id ? null : node.id,
+                    )
+                : undefined,
+          },
+          style: {
+            width:
+              node.kind === 'ghost' ? 168 : node.kind === 'variant' ? 184 : 208,
+            height:
+              node.kind === 'ghost' ? 86 : node.kind === 'variant' ? 90 : 98,
+          },
+          draggable: false,
+          selectable: true,
+        };
+      }),
+    [domainId, graph.nodes, expandedSkillId],
   );
 
   const edges = useMemo<Edge[]>(
     () =>
-      graph.edges.map((edge) => ({
-        id: edge.id,
-        source: edge.source,
-        target: edge.target,
-        type: 'smoothstep',
-        style: {
-          stroke: edge.met ? 'var(--court)' : 'var(--faint)',
-          strokeWidth: edge.met ? 2 : 1.6,
-          strokeDasharray: edge.met ? undefined : '5 5',
-          opacity: edge.met ? 0.9 : 0.75,
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: edge.met ? 'var(--court)' : 'var(--faint)',
-          width: 16,
-          height: 16,
-        },
-      })),
+      graph.edges.map((edge) =>
+        edge.kind === 'variant'
+          ? {
+              id: edge.id,
+              source: edge.source,
+              target: edge.target,
+              type: 'smoothstep',
+              style: {
+                stroke: 'var(--amber)',
+                strokeWidth: 1.8,
+                strokeDasharray: '3 4',
+                opacity: 0.9,
+              },
+            }
+          : {
+              id: edge.id,
+              source: edge.source,
+              target: edge.target,
+              type: 'smoothstep',
+              style: {
+                stroke: edge.met ? 'var(--court)' : 'var(--faint)',
+                strokeWidth: edge.met ? 2 : 1.6,
+                strokeDasharray: edge.met ? undefined : '5 5',
+                opacity: edge.met ? 0.9 : 0.75,
+              },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: edge.met ? 'var(--court)' : 'var(--faint)',
+                width: 16,
+                height: 16,
+              },
+            },
+      ),
     [graph.edges],
   );
 
@@ -81,10 +114,11 @@ export function SkillGraph({ domainId }: { domainId: DomainId }) {
   return (
     <div className="graph-canvas h-[540px] w-full overflow-hidden rounded-[1.5rem] border border-line md:h-[640px]">
       <ReactFlow
+        key={`${domainId}-${expandedSkillId ?? 'collapsed'}-${isMobile ? 'mobile' : 'desktop'}`}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        fitView={!isMobile}
+        fitView={!isMobile || Boolean(expandedSkillId)}
         fitViewOptions={{ padding: 0.1, maxZoom: 1.1 }}
         defaultViewport={isMobile ? { x: 16, y: 24, zoom: 0.82 } : undefined}
         minZoom={0.32}

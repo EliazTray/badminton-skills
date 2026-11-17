@@ -1,5 +1,5 @@
 import dagre from '@dagrejs/dagre';
-import { BASE_SKILLS, SKILL_BY_ID, getBaseSkillsForDomain } from '../data';
+import { BASE_SKILLS, SKILL_BY_ID, getBaseSkillsForDomain, getVariantsForSkill } from '../data';
 import type { DomainId, Level, Skill, SkillProgress } from '../data/schema';
 import { getSkillLevel, isSkillReady } from './progress';
 
@@ -7,11 +7,13 @@ const MAIN_NODE_WIDTH = 208;
 const MAIN_NODE_HEIGHT = 98;
 const GHOST_NODE_WIDTH = 168;
 const GHOST_NODE_HEIGHT = 86;
+const VARIANT_NODE_WIDTH = 184;
+const VARIANT_NODE_HEIGHT = 90;
 
 export interface DomainGraphNode {
   id: string;
   skill: Skill;
-  kind: 'main' | 'ghost';
+  kind: 'main' | 'ghost' | 'variant';
   level: Level;
   ready: boolean;
   position: { x: number; y: number };
@@ -21,6 +23,7 @@ export interface DomainGraphEdge {
   id: string;
   source: string;
   target: string;
+  kind: 'prerequisite' | 'variant';
   met: boolean;
   minLevel: number;
 }
@@ -81,6 +84,7 @@ export function getDescendantCount(skillId: string): number {
 export function buildDomainGraph(
   domainId: DomainId,
   progress: Record<string, SkillProgress>,
+  expandedSkillId?: string | null,
 ): DomainGraph {
   const mainSkills = getBaseSkillsForDomain(domainId);
   const mainIds = new Set(mainSkills.map((skill) => skill.id));
@@ -100,7 +104,12 @@ export function buildDomainGraph(
     .filter((candidate): candidate is Skill => Boolean(candidate))
     .sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
 
-  const graphSkills = [...ghostSkills, ...mainSkills];
+  const expandedVariants = expandedSkillId
+    ? getVariantsForSkill(expandedSkillId).filter((skill) => skill.domainId === domainId)
+    : [];
+  const variantIds = new Set(expandedVariants.map((skill) => skill.id));
+
+  const graphSkills = [...ghostSkills, ...mainSkills, ...expandedVariants];
   const includedIds = new Set(graphSkills.map((skill) => skill.id));
 
   const layout = new dagre.graphlib.Graph();
@@ -115,14 +124,15 @@ export function buildDomainGraph(
 
   for (const skill of graphSkills) {
     const isGhost = ghostIds.has(skill.id);
+    const isVariant = variantIds.has(skill.id);
     layout.setNode(skill.id, {
-      width: isGhost ? GHOST_NODE_WIDTH : MAIN_NODE_WIDTH,
-      height: isGhost ? GHOST_NODE_HEIGHT : MAIN_NODE_HEIGHT,
+      width: isGhost ? GHOST_NODE_WIDTH : isVariant ? VARIANT_NODE_WIDTH : MAIN_NODE_WIDTH,
+      height: isGhost ? GHOST_NODE_HEIGHT : isVariant ? VARIANT_NODE_HEIGHT : MAIN_NODE_HEIGHT,
     });
   }
 
   const edges: DomainGraphEdge[] = [];
-  for (const skill of graphSkills) {
+  for (const skill of [...ghostSkills, ...mainSkills]) {
     for (const prerequisite of skill.prerequisites) {
       if (!includedIds.has(prerequisite.skillId)) continue;
       layout.setEdge(prerequisite.skillId, skill.id);
@@ -130,26 +140,41 @@ export function buildDomainGraph(
         id: `${prerequisite.skillId}->${skill.id}`,
         source: prerequisite.skillId,
         target: skill.id,
+        kind: 'prerequisite',
         minLevel: prerequisite.minLevel,
         met: getSkillLevel(progress, prerequisite.skillId) >= prerequisite.minLevel,
       });
     }
   }
 
+  for (const variant of expandedVariants) {
+    if (!variant.parentSkillId || !includedIds.has(variant.parentSkillId)) continue;
+    layout.setEdge(variant.parentSkillId, variant.id);
+    edges.push({
+      id: `${variant.parentSkillId}->${variant.id}`,
+      source: variant.parentSkillId,
+      target: variant.id,
+      kind: 'variant',
+      minLevel: 1,
+      met: true,
+    });
+  }
+
   dagre.layout(layout);
 
   const nodes: DomainGraphNode[] = graphSkills.map((skill) => {
     const isGhost = ghostIds.has(skill.id);
+    const isVariant = variantIds.has(skill.id);
     const node = layout.node(skill.id) as
       | { x?: number; y?: number; width?: number; height?: number }
       | undefined;
-    const width = isGhost ? GHOST_NODE_WIDTH : MAIN_NODE_WIDTH;
-    const height = isGhost ? GHOST_NODE_HEIGHT : MAIN_NODE_HEIGHT;
+    const width = isGhost ? GHOST_NODE_WIDTH : isVariant ? VARIANT_NODE_WIDTH : MAIN_NODE_WIDTH;
+    const height = isGhost ? GHOST_NODE_HEIGHT : isVariant ? VARIANT_NODE_HEIGHT : MAIN_NODE_HEIGHT;
 
     return {
       id: skill.id,
       skill,
-      kind: isGhost ? 'ghost' : 'main',
+      kind: isGhost ? 'ghost' : isVariant ? 'variant' : 'main',
       level: getSkillLevel(progress, skill.id),
       ready: isGhost ? true : isSkillReady(skill, progress),
       position: {
