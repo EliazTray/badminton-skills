@@ -1,0 +1,241 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-court: var(--court);
+  --color-court-soft: var(--court-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-danger: var(--danger);
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f6f3eb;
+  --surface: #fffdf8;
+  --surface2: #eeeade;
+  --ink: #172119;
+  --muted: #5d6a61;
+  --faint: #8a948d;
+  --line: #ddd8ca;
+  --line-soft: #e9e4d8;
+  --court: #1f6b4e;
+  --court-soft: #dfeee6;
+  --court-contrast: #ffffff;
+  --amber: #a97424;
+  --amber-soft: #f4e8cf;
+  --danger: #a33e35;
+  --shadow-soft: 0 1px 2px rgb(23 33 25 / 0.04), 0 8px 28px rgb(23 33 25 / 0.05);
+
+  --domain-basics: #5f7d69;
+  --domain-footwork: #3f7480;
+  --domain-serve-receive: #8a6a3c;
+  --domain-rear-court: #9a5c49;
+  --domain-front-court: #4b7a58;
+  --domain-midcourt-defense: #59627f;
+  --domain-doubles: #7a5f85;
+  --domain-tactics: #6f6c3d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #0f1512;
+    --surface: #161f1a;
+    --surface2: #1c2922;
+    --ink: #e9efe9;
+    --muted: #a0b1a4;
+    --faint: #728176;
+    --line: #2b3a31;
+    --line-soft: #223027;
+    --court: #65c294;
+    --court-soft: #162d23;
+    --court-contrast: #0f1512;
+    --amber: #d9a64f;
+    --amber-soft: #332918;
+    --danger: #e08379;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 10px 30px rgb(0 0 0 / 0.2);
+
+    --domain-basics: #7fa38c;
+    --domain-footwork: #6ca6b4;
+    --domain-serve-receive: #c09a5d;
+    --domain-rear-court: #c88673;
+    --domain-front-court: #76aa84;
+    --domain-midcourt-defense: #8e98b8;
+    --domain-doubles: #ae90b8;
+    --domain-tactics: #b0aa6c;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    min-height: 100%;
+    background: var(--bg);
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background:
+      radial-gradient(circle at 12% -8%, color-mix(in srgb, var(--court) 7%, transparent), transparent 30rem),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: var(--court);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--court);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  [data-domain='basics'] {
+    --domain: var(--domain-basics);
+  }
+  [data-domain='footwork'] {
+    --domain: var(--domain-footwork);
+  }
+  [data-domain='serve-receive'] {
+    --domain: var(--domain-serve-receive);
+  }
+  [data-domain='rear-court'] {
+    --domain: var(--domain-rear-court);
+  }
+  [data-domain='front-court'] {
+    --domain: var(--domain-front-court);
+  }
+  [data-domain='midcourt-defense'] {
+    --domain: var(--domain-midcourt-defense);
+  }
+  [data-domain='doubles'] {
+    --domain: var(--domain-doubles);
+  }
+  [data-domain='tactics'] {
+    --domain: var(--domain-tactics);
+  }
+
+  .app-card {
+    border: 1px solid var(--line);
+    border-radius: 1.25rem;
+    background: var(--surface);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .graph-canvas {
+    background-color: var(--bg);
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--line) 36%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--line) 36%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.react-flow__attribution {
+  background: color-mix(in srgb, var(--surface) 80%, transparent) !important;
+  color: var(--faint) !important;
+  font-size: 10px !important;
+}
+
+.react-flow__attribution a {
+  color: inherit !important;
+}
+
+.react-flow__controls {
+  border: 1px solid var(--line) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: var(--shadow-soft) !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: var(--surface) !important;
+  border-bottom-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface2) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+.react-flow__node {
+  font-family: var(--font-sans);
+}
+
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 320ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
