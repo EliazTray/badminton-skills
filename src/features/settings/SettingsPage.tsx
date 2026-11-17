@@ -71,7 +71,7 @@ export function SettingsPage() {
           <div>
             <h2 className="text-sm font-bold">备份与导入将在 Phase 4 接入</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              目前还没有正式的导出 / 导入界面。在加入备份前，不建议把这里当作唯一记录；Phase 2 完成后会先补上完整的内容评估，再在 Phase 4 做 JSON 导出、导入和恢复快照。
+              目前还没有正式的导出 / 导入界面。在加入备份前，不建议把这里当作唯一记录；完整等级评估已接入，Phase 4 会做 JSON 导出、导入和恢复快照。
             </p>
           </div>
         </div>

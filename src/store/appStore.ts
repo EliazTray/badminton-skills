@@ -10,6 +10,13 @@ interface PersistedState {
   data: AppData;
 }
 
+export interface AssessSkillInput {
+  level: Level;
+  criteria: string[];
+  note?: string;
+  videoUrl?: string;
+}
+
 interface AppStore {
   data: AppData;
   hydrated: boolean;
@@ -17,6 +24,7 @@ interface AppStore {
   setHydrated: (hydrated: boolean) => void;
   setStorageWarning: (warning?: string) => void;
   setQuickLevel: (skillId: string, level: Level) => void;
+  assessSkill: (skillId: string, input: AssessSkillInput) => void;
 }
 
 function createId(): string {
@@ -59,6 +67,43 @@ export const useAppStore = create<AppStore>()(
                 ...state.data.progress,
                 [skillId]: {
                   level,
+                  assessments: [...(previous?.assessments ?? []), assessment],
+                  note: previous?.note,
+                },
+              },
+            },
+          };
+        });
+
+        void requestPersistentStorage();
+      },
+
+      assessSkill: (skillId, input) => {
+        set((state) => {
+          const previous = state.data.progress[skillId];
+          const previousLevel = previous?.level ?? 0;
+          if (input.level === previousLevel || input.criteria.length === 0) {
+            return state;
+          }
+
+          const assessment: Assessment = {
+            id: createId(),
+            date: todayISO(),
+            level: input.level,
+            kind: input.level < previousLevel ? 'correction' : 'rubric',
+            criteriaSnapshot: input.criteria,
+            contentVersion: CONTENT_VERSION,
+            note: input.note,
+            videoUrl: input.videoUrl,
+          };
+
+          return {
+            data: {
+              ...state.data,
+              progress: {
+                ...state.data.progress,
+                [skillId]: {
+                  level: input.level,
                   assessments: [...(previous?.assessments ?? []), assessment],
                   note: previous?.note,
                 },

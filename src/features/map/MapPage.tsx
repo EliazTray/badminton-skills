@@ -260,7 +260,7 @@ function DomainAtlas({ stats }: { stats: ReturnType<typeof getAllDomainStats> })
           <div>
             <h2 className="text-sm font-bold">现在可以做什么</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              先给 8 个锚点技能标记起点：正手握拍、上网步法、正手高远发球、正手高远球、放网、平抽挡、前后站位、四方球。其他技能的内容会在下一阶段补全。
+              可以先给 8 个锚点技能做起点评估：正手握拍、上网步法、正手高远发球、正手高远球、放网、平抽挡、前后站位、四方球。其他技能的内容会在下一阶段继续补全。
             </p>
           </div>
         </div>

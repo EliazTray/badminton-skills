@@ -228,7 +228,7 @@ export function DashboardPage() {
           <div>
             <h2 className="text-sm font-bold">Phase 1 正在搭建图谱地基</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-              当前可以浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，并给锚点和细分标记起点。完整评估、训练记录和推荐会在下一阶段接入。
+              当前可以浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，并按标准评估主技术和细分等级。训练记录和推荐会在下一阶段接入。
             </p>
           </div>
         </div>

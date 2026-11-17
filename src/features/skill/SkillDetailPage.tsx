@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { getSkill, getVariantsForSkill } from '../../data';
 import { getDomain } from '../../data/domains';
-import type { Assessment, Level, Skill } from '../../data/schema';
+import type { Assessment, Level } from '../../data/schema';
 import { LEVEL_DESCRIPTIONS, LEVEL_NAMES } from '../../data/schema';
 import { useAppStore } from '../../store/appStore';
 import {
@@ -31,6 +31,7 @@ import { DomainBadge } from '../../components/ui/DomainBadge';
 import { LevelPips } from '../../components/ui/LevelPips';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { cn } from '../../lib/cn';
+import { AssessmentDialog, type AssessmentResult, type TargetLevel } from './AssessmentDialog';
 
 type TabId = 'overview' | 'rubric' | 'practice' | 'variants' | 'history';
 
@@ -62,8 +63,9 @@ export function SkillDetailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const progress = useAppStore((state) => state.data.progress);
-  const setQuickLevel = useAppStore((state) => state.setQuickLevel);
+  const assessSkill = useAppStore((state) => state.assessSkill);
   const [tab, setTab] = useState<TabId>('overview');
+  const [assessmentTarget, setAssessmentTarget] = useState<TargetLevel | null>(null);
 
   const skill = skillId ? getSkill(skillId) : undefined;
   const backDomain = searchParams.get('domain');
@@ -181,12 +183,7 @@ export function SkillDetailPage() {
         </div>
       </header>
 
-      <LevelCard
-        skill={skill}
-        level={level}
-        canQuickMark={Boolean(skill.isAnchor || skill.parentSkillId || variants.length > 0)}
-        onSelect={(nextLevel) => setQuickLevel(skill.id, nextLevel)}
-      />
+      <LevelCard level={level} onAssess={setAssessmentTarget} />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="app-card overflow-hidden" aria-label="技能详情">
@@ -274,7 +271,7 @@ export function SkillDetailPage() {
                   {skill.isAnchor ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-court">
                       <Target className="h-3.5 w-3.5" />
-                      当前可在上方快速标记
+                      选择目标等级后可逐条确认标准
                     </span>
                   ) : null}
                 </div>
@@ -426,7 +423,7 @@ export function SkillDetailPage() {
                 </div>
 
                 <div className="rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
-                  细分技术当前是可快速标记的草案内容。先独立记录等级，后续再把训练记录、成功率和完整 rubric 评估接进来。
+                  细分技术可以直接按目标等级逐条确认评估；训练记录和成功率会在 Phase 3 接入。
                 </div>
               </div>
             ) : null}
@@ -441,7 +438,7 @@ export function SkillDetailPage() {
                 <div>
                   <h2 className="text-lg font-bold tracking-tight">等级历史</h2>
                   <p className="mt-1 text-xs leading-5 text-muted">
-                    每次等级变化都会留下记录；Phase 1 的快速标记会以「起点估值」保存。
+                    每次等级变化都会留下记录；完整评估会保存你确认过的标准和备注。
                   </p>
                 </div>
 
@@ -587,20 +584,34 @@ export function SkillDetailPage() {
           </section>
         </aside>
       </div>
+
+      {assessmentTarget !== null ? (
+        <AssessmentDialog
+          key={`${skill.id}-${assessmentTarget}`}
+          skill={skill}
+          currentLevel={level}
+          initialTarget={assessmentTarget}
+          onClose={() => setAssessmentTarget(null)}
+          onConfirm={(result: AssessmentResult) => {
+            assessSkill(skill.id, {
+              level: result.level,
+              criteria: result.criteria,
+              note: result.note,
+            });
+            setAssessmentTarget(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
 function LevelCard({
-  skill,
   level,
-  canQuickMark,
-  onSelect,
+  onAssess,
 }: {
-  skill: Skill;
   level: Level;
-  canQuickMark: boolean;
-  onSelect: (level: Level) => void;
+  onAssess: (level: TargetLevel) => void;
 }) {
   return (
     <section className="app-card p-5">
@@ -620,26 +631,32 @@ function LevelCard({
           </div>
         </div>
 
-        {canQuickMark ? (
+        {level < 4 ? (
           <div className="shrink-0">
+            <p className="mb-2 text-right text-[10px] font-semibold text-muted">
+              选择目标等级，查看并确认标准
+            </p>
             <div
-              className="grid grid-cols-5 gap-1.5 rounded-2xl border border-line bg-bg/50 p-1.5"
+              className="grid grid-cols-4 gap-1.5 rounded-2xl border border-line bg-bg/50 p-1.5"
               role="group"
-              aria-label="快速标记等级"
+              aria-label="选择评估目标等级"
             >
-              {([0, 1, 2, 3, 4] as const).map((option) => {
-                const active = option === level;
+              {([1, 2, 3, 4] as const).map((option) => {
+                const disabled = option <= level;
+                const next = option === level + 1;
                 return (
                   <button
                     key={option}
                     type="button"
-                    onClick={() => onSelect(option)}
-                    aria-pressed={active}
+                    disabled={disabled}
+                    onClick={() => onAssess(option)}
                     className={cn(
                       'flex min-h-12 min-w-0 flex-col items-center justify-center rounded-xl px-1 text-center transition-colors',
-                      active
-                        ? 'bg-court text-[var(--court-contrast)]'
-                        : 'text-muted hover:bg-surface2 hover:text-ink',
+                      disabled
+                        ? 'cursor-not-allowed bg-surface2/55 text-faint/60'
+                        : next
+                          ? 'border border-court/30 bg-court-soft text-court hover:bg-court hover:text-[var(--court-contrast)]'
+                          : 'text-muted hover:bg-surface2 hover:text-ink',
                     )}
                   >
                     <span className="text-xs font-bold">L{option}</span>
@@ -651,17 +668,13 @@ function LevelCard({
               })}
             </div>
             <p className="mt-2 max-w-[280px] text-right text-[10px] leading-4 text-faint">
-              {skill.isAnchor
-                ? 'Phase 1 快速标记为起点估值；完整标准评估将在 Phase 2 接入。'
-                : skill.parentSkillId
-                  ? '细分技术可独立标记；完整标准评估将在 Phase 2 接入。'
-                  : '主技术可快速标记；细分技术可在「细分」页签独立标记。'}
+              必须逐条确认该等级标准后才能升级；不可按训练次数自动升级。
             </p>
           </div>
         ) : (
-          <div className="max-w-xs rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
-            <p className="font-semibold text-ink">完整评估将在 Phase 2 开放</p>
-            <p className="mt-1">当前节点内容为草案，可以查看要点与标准；暂不支持标记等级。</p>
+          <div className="max-w-xs rounded-2xl border border-court/25 bg-court-soft/50 p-4 text-xs leading-5 text-court">
+            <p className="font-semibold">已达到最高等级</p>
+            <p className="mt-1">保持训练与实战复习即可；后续会加入复习评估。</p>
           </div>
         )}
       </div>
@@ -694,7 +707,7 @@ function DraftNote() {
     <div className="rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
       <p className="font-semibold text-ink">这是 Phase 1 内容草案</p>
       <p className="mt-1">
-        当前节点的动作要点和标准已可参考，但每级标准尚未补足到 2–4 条。Phase 2 会逐项完善，并在你评审后再用于正式评估。
+        当前节点的动作要点和标准已可参考，但每级标准仍是草案，后续会继续补足；你可以先按当前标准评估，评审后再校正。
       </p>
     </div>
   );
