@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, HardDrive, Info, LockKeyhole, Upload } from 'lucide-react';
+import { Cloud, Download, HardDrive, Info, LockKeyhole, Upload, UserRound } from 'lucide-react';
 import { BASE_SKILLS, CONTENT_VERSION, VARIANT_SKILLS } from '../../data';
 import { DOMAINS } from '../../data/domains';
 import { useAppStore } from '../../store/appStore';
 import { getStorageMode } from '../../store/storage';
+import { useAuth } from '../auth/AuthProvider';
+import { SYNC_PHASE_LABELS, formatSyncTime, useCloudSync } from '../sync/CloudSyncProvider';
 import {
   bundleToAppData,
   createExportBundle,
@@ -23,6 +25,8 @@ export function SettingsPage() {
   const importData = useAppStore((state) => state.importData);
   const markBackup = useAppStore((state) => state.markBackup);
   const storageMode = getStorageMode();
+  const { configured: authConfigured, user } = useAuth();
+  const { phase, lastSyncedAt } = useCloudSync();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dataMessage, setDataMessage] = useState<DataMessage | null>(null);
   const levels = Object.values(data.progress).filter((item) => item.level > 0).length;
@@ -69,7 +73,7 @@ export function SettingsPage() {
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-court">Settings</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">设置与数据</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          这个版本先把数据边界说清楚：数据默认只保存在你的浏览器里，不需要登录，也不会上传到服务器。
+          数据默认只保存在浏览器；登录后可以同步到云端并跨设备使用，教练查看只读分享不需要账号。
         </p>
       </header>
 
@@ -117,13 +121,35 @@ export function SettingsPage() {
 
       <section className="app-card p-5 md:p-6">
         <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-court-soft text-court">
+            <UserRound className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold">账号与云同步</h2>
+            <p className="mt-1 text-xs leading-5 text-muted">
+              {!authConfigured
+                ? 'Firebase 尚未配置；应用不会加载数据。'
+                : user
+                  ? `${user.email} · ${SYNC_PHASE_LABELS[phase]}${lastSyncedAt ? ` · 最近 ${formatSyncTime(lastSyncedAt)}` : ''}`
+                  : '未登录。登录并通过白名单后才能加载数据。'}
+            </p>
+          </div>
+        </div>
+        <Link to="/account" className={buttonClassName('secondary', 'mt-4')}>
+          <Cloud className="h-4 w-4" />
+          {user ? '管理账号与分享' : '登录或配置云同步'}
+        </Link>
+      </section>
+
+      <section className="app-card p-5 md:p-6">
+        <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-amber-soft text-amber">
             <LockKeyhole className="h-5 w-5" />
           </span>
           <div>
             <h2 className="text-sm font-bold">数据备份</h2>
             <p className="mt-1 text-xs leading-5 text-muted">
-              导出的 JSON 会包含技能等级、评估历史、备注和训练记录。数据只存在当前浏览器，清理站点数据前请先导出。
+              导出的 JSON 会包含技能等级、评估历史、备注和训练记录。云同步不能替代备份；清理站点数据或更换账号前请先导出。
             </p>
             <p className="mt-2 text-[11px] font-medium text-faint">
               最近备份：{data.settings.lastBackupAt ?? '还没有导出过'}

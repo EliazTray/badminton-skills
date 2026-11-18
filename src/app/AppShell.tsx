@@ -6,10 +6,12 @@ import {
   Network,
   Settings,
   TriangleAlert,
+  UserRound,
 } from 'lucide-react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { cn } from '../lib/cn';
 import { useAppStore } from '../store/appStore';
+import { useAuth } from '../features/auth/AuthProvider';
 import { ShuttleMark } from '../components/ShuttleMark';
 
 const navItems = [
@@ -38,6 +40,7 @@ function navClassName(isActive: boolean, mobile = false): string {
 export function AppShell() {
   const location = useLocation();
   const storageWarning = useAppStore((state) => state.storageWarning);
+  const { configured: authConfigured, user } = useAuth();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -83,17 +86,34 @@ export function AppShell() {
         </nav>
 
         <div className="mt-auto space-y-3">
+          <Link
+            to="/account"
+            className="group block rounded-2xl border border-line bg-bg/60 p-3.5 transition-colors hover:border-court/35 hover:bg-surface2/50"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                <UserRound className="h-3.5 w-3.5" />
+                {user ? '已登录' : authConfigured ? '登录' : '账号'}
+              </div>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-court">
+                {user ? '云同步' : '开启'}
+              </span>
+            </div>
+            <p className="mt-1.5 break-all text-xs leading-5 text-faint">
+              {user?.email ?? '登录后可跨设备同步技能进度。'}
+            </p>
+            <span className="mt-2 inline-flex rounded-full bg-surface2 px-2 py-1 text-[10px] font-semibold tracking-wide text-muted">
+              {user ? 'Account · 已连接' : 'Account · 本地优先'}
+            </span>
+          </Link>
           <div className="rounded-2xl border border-line bg-bg/60 p-3.5">
             <div className="flex items-center gap-2 text-xs font-semibold text-muted">
               <HardDrive className="h-3.5 w-3.5" />
               本地优先
             </div>
             <p className="mt-1.5 text-xs leading-5 text-faint">
-              进度保存在这台设备；导出与云同步会在后续阶段接入。
+              数据默认保存在这台设备；登录后自动同步到云端，教练查看分享不需要登录。
             </p>
-            <span className="mt-2 inline-flex rounded-full bg-surface2 px-2 py-1 text-[10px] font-semibold tracking-wide text-muted">
-              Phase 1 · 图谱预览
-            </span>
           </div>
         </div>
       </aside>
@@ -106,9 +126,13 @@ export function AppShell() {
             </span>
             <span className="text-sm font-bold tracking-tight">羽球图谱</span>
           </NavLink>
-          <span className="rounded-full border border-line bg-surface px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted">
-            Phase 1
-          </span>
+          <NavLink
+            to="/account"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-2.5 py-1 text-[10px] font-semibold tracking-wide text-muted"
+          >
+            <UserRound className="h-3.5 w-3.5" />
+            {user ? '账号' : '登录'}
+          </NavLink>
         </div>
       </header>
 

@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // The allowlist is keyed by the normalized (lowercase) account email.
+    // It must be bootstrapped once from the Firebase Console with role: "admin".
+    function allowedEmail() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email));
+    }
+
+    function isAdmin() {
+      return allowedEmail()
+        && get(/databases/$(database)/documents/allowlist/$(request.auth.token.email)).data.role == 'admin';
+    }
+
+    function validShare() {
+      let data = request.resource.data;
+      return signedIn()
+        && data.ownerUid == request.auth.uid
+        && data.schemaVersion == 1
+        && data.contentVersion is string
+        && data.contentVersion.size() > 0
+        && data.clientUpdatedAt is string
+        && data.levels is map
+        && data.levels.size() <= 100
+        && data.keys().hasOnly([
+          'ownerUid',
+          'schemaVersion',
+          'contentVersion',
+          'displayName',
+          'levels',
+          'clientUpdatedAt',
+          'updatedAt'
+        ])
+        && (
+          !data.keys().hasAny(['displayName'])
+          || data.displayName == null
+          || (data.displayName is string && data.displayName.size() <= 40)
+        );
+    }
+
+    match /allowlist/{email} {
+      allow get: if signedIn() && request.auth.token.email == email;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /users/{uid}/state/{stateId} {
+      allow read, write: if owns(uid) && allowedEmail() && stateId == 'current';
+    }
+
+    match /shares/{shareId} {
+      // 分享页只通过随机 ID 读取，不开放公开列表浏览。
+      allow get: if true;
+      allow list: if signedIn() && allowedEmail() && resource.data.ownerUid == request.auth.uid;
+      allow create: if allowedEmail() && validShare();
+      allow update: if allowedEmail() && validShare() && resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && allowedEmail() && resource.data.ownerUid == request.auth.uid;
+    }
+  }
+}

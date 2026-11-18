@@ -1,11 +1,13 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import { AppShell } from './AppShell';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoadingScreen } from './LoadingScreen';
 import { useAppStore } from '../store/appStore';
 import { DashboardPage } from '../features/dashboard/DashboardPage';
 import { LogPage } from '../features/sessions/LogPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { AccountPage } from '../features/auth/AccountPage';
+import { AccessGate } from '../features/auth/AccessGate';
+import { SharedProfilePage } from '../features/share/SharedProfilePage';
 
 const MapPage = lazy(() =>
   import('../features/map/MapPage').then((module) => ({ default: module.MapPage })),
@@ -24,16 +26,23 @@ function RouteLoading() {
   );
 }
 
+function AppLayout() {
+  return <AccessGate />;
+}
+
 export function App() {
   const hydrated = useAppStore((state) => state.hydrated);
+  const location = useLocation();
+  const isShareRoute = location.pathname.startsWith('/share/');
 
-  if (!hydrated) {
+  if (!hydrated && !isShareRoute) {
     return <LoadingScreen />;
   }
 
   return (
     <Routes>
-      <Route element={<AppShell />}>
+      <Route path="share/:shareId" element={<SharedProfilePage />} />
+      <Route element={<AppLayout />}>
         <Route index element={<DashboardPage />} />
         <Route
           path="map"
@@ -52,6 +61,7 @@ export function App() {
           }
         />
         <Route path="log" element={<LogPage />} />
+        <Route path="account" element={<AccountPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

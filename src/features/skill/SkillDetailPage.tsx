@@ -705,7 +705,7 @@ function SectionTitle({
 function DraftNote() {
   return (
     <div className="rounded-2xl border border-dashed border-line bg-bg/40 p-4 text-xs leading-5 text-muted">
-      <p className="font-semibold text-ink">这是 Phase 1 内容草案</p>
+      <p className="font-semibold text-ink">这是内容草案</p>
       <p className="mt-1">
         当前节点的动作要点和标准已可参考，但每级标准仍是草案，后续会继续补足；你可以先按当前标准评估，评审后再校正。
       </p>

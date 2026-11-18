@@ -10,7 +10,7 @@ export function LogPage() {
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-court">Training log</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">训练记录</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-          记录每一次训练，才能知道哪些技能真的练过、哪些已经开始生疏。这个页面会在 Phase 3 接入完整表单。
+          记录每一次训练，才能知道哪些技能真的练过、哪些已经开始生疏。当前版本先把手动技能评估和云同步跑通，完整训练表单会在下一阶段接入。
         </p>
       </header>
 
@@ -20,7 +20,7 @@ export function LogPage() {
         </span>
         <h2 className="mt-5 text-lg font-bold tracking-tight">先把图谱的起点标出来</h2>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-          Phase 1 先解决「我在哪」的问题：浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，并按标准评估等级。训练记录、成功率和视频链接会在下一阶段加入。
+          当前先解决「我在哪」的问题：浏览 {BASE_SKILLS.length} 个主技术、{VARIANT_SKILLS.length} 个细分，查看前置关系，并按标准评估等级。训练记录、成功率和视频链接会在下一阶段加入。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link to="/map" className={buttonClassName('primary')}>

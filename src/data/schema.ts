@@ -198,6 +198,14 @@ export const ExportBundleSchema = z.object({
   sessions: z.array(SessionSchema),
 });
 
+export const ShareSnapshotSchema = z.object({
+  schemaVersion: z.literal(1),
+  contentVersion: z.string().min(1),
+  displayName: z.string().max(40).optional(),
+  levels: z.record(z.string(), levelSchema),
+  updatedAt: z.string().min(1),
+});
+
 export type Drill = z.infer<typeof DrillSchema>;
 export type Prerequisite = z.infer<typeof PrerequisiteSchema>;
 export type Skill = z.infer<typeof SkillSchema>;
@@ -209,6 +217,7 @@ export type Profile = z.infer<typeof ProfileSchema>;
 export type Settings = z.infer<typeof SettingsSchema>;
 export type AppData = z.infer<typeof AppDataSchema>;
 export type ExportBundle = z.infer<typeof ExportBundleSchema>;
+export type ShareSnapshot = z.infer<typeof ShareSnapshotSchema>;
 
 export const DEFAULT_PROFILE: Profile = {
   primaryMode: 'both',
