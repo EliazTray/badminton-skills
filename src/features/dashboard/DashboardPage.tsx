@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   ArrowUpRight,
   CircleDot,
+  ClipboardList,
   Layers,
   Network,
   Sparkles,
@@ -11,13 +12,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
+import { getAllDomainStats, getOverallStats, getSkillLevel } from '../../lib/progress';
 import {
-  getAllDomainStats,
-  getFrontierSkills,
-  getOverallStats,
-  getSkillLevel,
-} from '../../lib/progress';
-import { getDescendantCount } from '../../lib/graph';
+  buildRecommendations,
+  type RecommendationSlot,
+} from '../../lib/recommendations';
+import { getRecentSessions, getStaleSkills, getWeekSessionStats } from '../../lib/sessions';
+import { formatChineseDate, startOfCurrentWeek, todayISO } from '../../lib/dates';
 import { buttonClassName } from '../../components/ui/buttonStyles';
 import { DomainDot } from '../../components/ui/DomainBadge';
 import { LevelPips } from '../../components/ui/LevelPips';
@@ -25,20 +26,36 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { cn } from '../../lib/cn';
 import { getDomain } from '../../data/domains';
 import { BASE_SKILLS, VARIANT_SKILLS } from '../../data';
-import type { Skill, SkillProgress } from '../../data/schema';
+import type { Skill } from '../../data/schema';
 
-interface Suggestion {
-  skill: Skill;
-  reason: string;
-  priority: number;
-}
+const SLOT_LABELS: Record<RecommendationSlot, string> = {
+  main: '主练',
+  balance: '补短',
+  review: '复习',
+  extra: '补充',
+};
 
 export function DashboardPage() {
   const progress = useAppStore((state) => state.data.progress);
+  const sessions = useAppStore((state) => state.data.sessions);
+  const profile = useAppStore((state) => state.data.profile);
+  const settings = useAppStore((state) => state.data.settings);
 
   const overall = useMemo(() => getOverallStats(progress), [progress]);
   const domains = useMemo(() => getAllDomainStats(progress), [progress]);
-  const suggestions = useMemo(() => buildSuggestions(progress), [progress]);
+  const recommendations = useMemo(
+    () => buildRecommendations({ progress, sessions, profile, settings, now: new Date() }),
+    [progress, sessions, profile, settings],
+  );
+  const recentSessions = useMemo(() => getRecentSessions(sessions, 3), [sessions]);
+  const staleSkills = useMemo(
+    () => getStaleSkills(progress, sessions, settings.staleDays),
+    [progress, sessions, settings.staleDays],
+  );
+  const weekStats = useMemo(
+    () => getWeekSessionStats(sessions, todayISO(startOfCurrentWeek())),
+    [sessions],
+  );
   const domainsStarted = domains.filter((domain) => domain.started > 0).length;
 
   return (
@@ -75,7 +92,7 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <section aria-label="总览数据" className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <section aria-label="总览数据" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <StatCard
           icon={CircleDot}
           label="主技术点亮"
@@ -111,6 +128,13 @@ export function DashboardPage() {
           suffix="/ 4"
           hint="主技术的平均值"
         />
+        <StatCard
+          icon={ClipboardList}
+          label="本周训练"
+          value={`${weekStats.count}`}
+          suffix="次"
+          hint={`${weekStats.minutes} 分钟 · 目标 ${profile.weeklyTargetSessions} 次`}
+        />
       </section>
 
       <section aria-labelledby="next-up-title">
@@ -127,8 +151,8 @@ export function DashboardPage() {
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {suggestions.length > 0 ? (
-            suggestions.map(({ skill, reason }, index) => (
+          {recommendations.length > 0 ? (
+            recommendations.map(({ skill, reason, slot }) => (
               <Link
                 key={skill.id}
                 to={`/map/${skill.id}`}
@@ -139,7 +163,9 @@ export function DashboardPage() {
                     <DomainDot domainId={skill.domainId} />
                     {getDomainName(skill)}
                   </span>
-                  <span className="text-[11px] font-bold tabular-nums text-faint">0{index + 1}</span>
+                  <span className="rounded-full bg-court-soft px-2 py-1 text-[10px] font-bold text-court">
+                    {SLOT_LABELS[slot]}
+                  </span>
                 </div>
                 <h3 className="mt-3 text-lg font-bold tracking-tight">{skill.name}</h3>
                 <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{skill.summary}</p>
@@ -157,7 +183,87 @@ export function DashboardPage() {
             ))
           ) : (
             <div className="app-card col-span-full p-6 text-sm leading-6 text-muted">
-              暂时没有新的可推进技能。可以在图谱里复习已达到 L3 / L4 的技能，或等待训练记录功能接入后获得复习建议。
+              暂时没有新的可推进技能。可以在图谱里复习已达到 L3 / L4 的技能，或记录一次训练后查看待复习提示。
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="grid gap-3 md:grid-cols-2">
+        <div className="app-card p-5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-faint">Recent</p>
+              <h2 className="mt-1 text-base font-bold tracking-tight">最近训练</h2>
+            </div>
+            <Link to="/log" className="text-xs font-semibold text-court hover:underline">
+              全部记录
+            </Link>
+          </div>
+
+          {recentSessions.length > 0 ? (
+            <ul className="mt-4 divide-y divide-line">
+              {recentSessions.map((session) => (
+                <li key={session.id} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-semibold text-muted">
+                      {formatChineseDate(session.date)} · {session.type}
+                    </span>
+                    <span className="text-[10px] text-faint">
+                      {session.durationMin} 分钟
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{session.content}</p>
+                  {session.focus.length > 0 ? (
+                    <p className="mt-1 text-[10px] text-faint">
+                      练到 {session.focus.length} 个技能
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-line p-4 text-xs leading-5 text-muted">
+              还没有训练记录。记下一次训练后，这里会显示最近的练习。
+              <Link to="/log" className={buttonClassName('secondary', 'mt-3 w-full')}>
+                <ClipboardList className="h-4 w-4" />
+                记第一次训练
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div className="app-card p-5">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-faint">Review</p>
+              <h2 className="mt-1 text-base font-bold tracking-tight">待复习</h2>
+            </div>
+            <span className="text-[10px] text-faint">超过 {settings.staleDays} 天未练</span>
+          </div>
+
+          {staleSkills.length > 0 ? (
+            <ul className="mt-4 space-y-2">
+              {staleSkills.slice(0, 3).map((item) => (
+                <li key={item.skill.id}>
+                  <Link
+                    to={`/map/${item.skill.id}?domain=${item.skill.domainId}`}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-line bg-bg/40 px-3 py-2.5 transition-colors hover:border-court/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-xs font-semibold">{item.skill.name}</span>
+                      <span className="mt-0.5 block text-[10px] text-faint">
+                        {item.days} 天未练 · {getDomain(item.skill.domainId).shortName}
+                      </span>
+                    </span>
+                    <LevelPips level={item.level} size="sm" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-4 rounded-xl border border-dashed border-line p-4 text-xs leading-5 text-muted">
+              还没有需要复习的技能。记录训练后，长期未练的 L2+ 技能会出现在这里。
             </div>
           )}
         </div>
@@ -272,57 +378,4 @@ function StatCard({
 
 function getDomainName(skill: Skill): string {
   return getDomain(skill.domainId).name;
-}
-
-function buildSuggestions(progress: Record<string, SkillProgress>): Suggestion[] {
-  const frontier = getFrontierSkills(progress);
-  const domainStats = new Map(
-    getAllDomainStats(progress).map((domain) => [domain.domainId, domain]),
-  );
-
-  const scored = frontier.map((skill) => {
-    const level = getSkillLevel(progress, skill.id);
-    const domain = domainStats.get(skill.domainId);
-    const descendants = getDescendantCount(skill.id);
-    const domainAverage = domain?.averageLevel ?? 0;
-
-    let reason = '前置已满足，可以开始';
-    if (level > 0) reason = '正在练，继续把标准做稳';
-    else if (skill.isAnchor) reason = '领域锚点，先从这里标出起点';
-    else if (domainAverage < 0.5 && (domain?.total ?? 0) > 0) reason = '这个领域还有明显空位';
-    else if (descendants >= 6) reason = '基础枢纽，能解锁多条后续路径';
-
-    const priority =
-      level * 8 +
-      (skill.isAnchor ? 5 : 0) +
-      (4 - domainAverage) * 2 +
-      Math.min(descendants, 8) * 0.3;
-
-    return { skill, reason, priority };
-  });
-
-  scored.sort((a, b) => {
-    if (b.priority !== a.priority) return b.priority - a.priority;
-    return a.skill.name.localeCompare(b.skill.name, 'zh-CN');
-  });
-
-  const picks: Suggestion[] = [];
-  const usedDomains = new Set<string>();
-
-  for (const candidate of scored) {
-    if (picks.length >= 3) break;
-    if (usedDomains.has(candidate.skill.domainId)) continue;
-    picks.push(candidate);
-    usedDomains.add(candidate.skill.domainId);
-  }
-
-  if (picks.length < 3) {
-    for (const candidate of scored) {
-      if (picks.length >= 3) break;
-      if (picks.some((pick) => pick.skill.id === candidate.skill.id)) continue;
-      picks.push(candidate);
-    }
-  }
-
-  return picks;
 }

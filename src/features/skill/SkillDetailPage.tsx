@@ -6,6 +6,7 @@ import {
   BookOpen,
   Check,
   Circle,
+  ClipboardList,
   Dumbbell,
   History,
   Layers,
@@ -179,6 +180,12 @@ export function SkillDetailPage() {
             <span className="text-xs text-faint">
               {domain.name} · {skill.keyPoints.length} 个要点 · {skill.drills.length} 个练习
             </span>
+          </div>
+          <div className="mt-4">
+            <Link to={`/log?skill=${skill.id}`} className={buttonClassName('secondary', 'min-h-9 px-3 text-xs')}>
+              <ClipboardList className="h-3.5 w-3.5" />
+              记录训练
+            </Link>
           </div>
         </div>
       </header>

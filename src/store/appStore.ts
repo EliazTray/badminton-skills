@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { CONTENT_VERSION } from '../data';
-import type { AppData, Assessment, Level } from '../data/schema';
-import { AppDataSchema, DEFAULT_APP_DATA } from '../data/schema';
+import type { AppData, Assessment, Level, Session } from '../data/schema';
+import { AppDataSchema, DEFAULT_APP_DATA, SessionSchema } from '../data/schema';
 import { todayISO } from '../lib/dates';
 import { appStorage, getStorageMode, requestPersistentStorage } from './storage';
 
@@ -17,6 +17,8 @@ export interface AssessSkillInput {
   videoUrl?: string;
 }
 
+export type SessionInput = Omit<Session, 'id' | 'createdAt' | 'updatedAt'>;
+
 interface AppStore {
   data: AppData;
   hydrated: boolean;
@@ -25,6 +27,9 @@ interface AppStore {
   setStorageWarning: (warning?: string) => void;
   setQuickLevel: (skillId: string, level: Level) => void;
   assessSkill: (skillId: string, input: AssessSkillInput) => void;
+  addSession: (input: SessionInput) => string;
+  updateSession: (sessionId: string, input: SessionInput) => void;
+  deleteSession: (sessionId: string) => void;
   importData: (data: AppData) => void;
   markBackup: () => void;
 }
@@ -114,6 +119,60 @@ export const useAppStore = create<AppStore>()(
           };
         });
 
+        void requestPersistentStorage();
+      },
+
+      addSession: (input) => {
+        const id = createId();
+        const now = new Date().toISOString();
+        const session = SessionSchema.parse({
+          ...input,
+          id,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        set((state) => ({
+          data: {
+            ...state.data,
+            sessions: [...state.data.sessions, session],
+          },
+        }));
+        void requestPersistentStorage();
+        return id;
+      },
+
+      updateSession: (sessionId, input) => {
+        set((state) => {
+          const existing = state.data.sessions.find((session) => session.id === sessionId);
+          if (!existing) return state;
+
+          const updated = SessionSchema.parse({
+            ...input,
+            id: existing.id,
+            createdAt: existing.createdAt,
+            updatedAt: new Date().toISOString(),
+          });
+
+          return {
+            data: {
+              ...state.data,
+              sessions: state.data.sessions.map((session) =>
+                session.id === sessionId ? updated : session,
+              ),
+            },
+          };
+        });
+        void requestPersistentStorage();
+      },
+
+      deleteSession: (sessionId) => {
+        set((state) => ({
+          data: {
+            ...state.data,
+            sessions: state.data.sessions.filter((session) => session.id !== sessionId),
+          },
+        }));
         void requestPersistentStorage();
       },
 
