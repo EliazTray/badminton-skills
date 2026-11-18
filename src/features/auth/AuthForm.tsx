@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Cloud, LoaderCircle, Mail, ShieldCheck } from 'lucide-react';
+import { LoaderCircle, Mail } from 'lucide-react';
 import { useAuth, authErrorMessage } from './AuthProvider';
 import { buttonClassName } from '../../components/ui/buttonStyles';
 
@@ -61,27 +61,17 @@ export function AuthForm() {
   };
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-md space-y-6">
       <header>
         <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-court">Members only</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight md:text-3xl">登录后使用</h1>
         <p className="mt-2 text-sm leading-6 text-muted">
-          只有管理员加入白名单的邮箱可以进入。登录后，进度会同步到账号；教练查看只读分享链接不需要登录。
+          只有白名单内的邮箱可以进入。教练查看只读分享链接不需要登录。
         </p>
       </header>
 
       <section className="app-card p-5 md:p-6">
-        <div className="flex items-center gap-2 rounded-2xl bg-court-soft/50 p-3 text-xs leading-5 text-court">
-          <ShieldCheck className="h-4 w-4 shrink-0" />
-          <span>白名单校验通过后，才会加载你的技能数据。</span>
-        </div>
-
-        <p className="mt-3 text-xs leading-5 text-muted">
-          第一次使用请点「创建邮箱账号」。白名单只是授权邮箱，不会自动创建 Firebase
-          账号；已有账号但忘记密码，可以用「忘记密码？」重置。
-        </p>
-
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             className={buttonClassName('secondary', 'w-full')}
@@ -181,7 +171,7 @@ export function AuthForm() {
 
           <button type="submit" disabled={busy} className={buttonClassName('primary', 'w-full')}>
             {busy ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-            {mode === 'signin' ? '登录并验证白名单' : '创建账号并验证'}
+            {mode === 'signin' ? '登录' : '创建账号'}
           </button>
         </form>
 
@@ -197,12 +187,8 @@ export function AuthForm() {
         ) : null}
 
         <p className="mt-5 text-[11px] leading-5 text-faint">
-          账号身份由 Firebase Authentication 管理，应用不会保存你的密码。邮箱注册后必须先验证邮箱；即使创建了账号，不在白名单内也无法加载应用数据。
+          第一次使用请点「创建邮箱账号」；新邮箱需要完成邮箱验证。
         </p>
-        <div className="mt-3 flex items-center gap-2 text-[11px] leading-5 text-faint">
-          <Cloud className="h-3.5 w-3.5" />
-          Firebase 不可访问时，已通过验证的账号可以使用本地缓存；云端写入需要联网。
-        </div>
       </section>
     </div>
   );

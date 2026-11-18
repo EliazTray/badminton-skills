@@ -295,9 +295,9 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/too-many-requests': '尝试次数过多，请稍后再试。',
   'auth/popup-blocked': '登录弹窗被浏览器拦截，请允许弹窗或改用邮箱登录。',
   'auth/popup-closed-by-user': '登录窗口已关闭。',
-  'auth/operation-not-allowed': '这个登录方式还没有在 Firebase 控制台启用。',
-  'auth/network-request-failed': '网络请求失败，请检查网络或 Firebase 是否可访问。',
-  'auth/unauthorized-domain': '当前域名还没有加入 Firebase 的授权域名。',
+  'auth/operation-not-allowed': '这个登录方式暂不可用，请联系管理员。',
+  'auth/network-request-failed': '网络请求失败，请检查网络后重试。',
+  'auth/unauthorized-domain': '当前域名未获授权，请联系管理员。',
 };
 
 export function authErrorMessage(error: unknown): string {
