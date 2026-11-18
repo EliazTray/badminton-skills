@@ -90,7 +90,7 @@ npm run catalog:generate # 重新生成 docs/skill-catalog.md
 
 ### 云同步的生产配置
 
-在仓库 `Settings → Secrets and variables → Actions → Variables` 添加 `VITE_FIREBASE_API_KEY`、`VITE_FIREBASE_AUTH_DOMAIN`、`VITE_FIREBASE_PROJECT_ID`、`VITE_FIREBASE_APP_ID`，然后重新运行部署。它们是公开的前端配置，不是私钥。Firebase Authentication 的 Authorized domains 需要包含 `eliaztray.github.io`。
+在仓库 `Settings → Secrets and variables → Actions → Variables` 添加 `VITE_FIREBASE_API_KEY`、`VITE_FIREBASE_AUTH_DOMAIN`、`VITE_FIREBASE_PROJECT_ID`、`VITE_FIREBASE_APP_ID`，然后重新运行部署。它们是公开的前端配置，不是私钥。`VITE_FIREBASE_AUTH_DOMAIN` 必须是 Firebase 控制台里的 `项目ID.firebaseapp.com` 或 `项目ID.web.app`，不能填 `localhost` 或 `eliaztray.github.io`；后者只放在 Authentication 的 Authorized domains 里。Firebase Authentication 的 Authorized domains 需要包含 `eliaztray.github.io`。
 
 `firestore.rules` 不会随 GitHub Pages 自动部署；修改后要在 Firebase Console 发布，或执行 `npx firebase deploy --only firestore:rules`。第一步还要在 Firestore Console 手动创建管理员 `allowlist` 条目。
 

@@ -118,10 +118,12 @@ cp .env.example .env.local
 
 ```bash
 VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_AUTH_DOMAIN=你的项目ID.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_APP_ID=...
 ```
+
+> `VITE_FIREBASE_AUTH_DOMAIN` 必须使用 Firebase 控制台给出的 Auth domain，通常是 `你的项目ID.firebaseapp.com` 或 `你的项目ID.web.app`。**不要填 `localhost` 或 `eliaztray.github.io`**；这两个域名只应出现在 Authentication → Settings → Authorized domains 中。填错时 Google 登录会跳到 `https://eliaztray.github.io/__/auth/handler` 并返回 404。
 
 `storageBucket` 和 `messagingSenderId` 可选；当前功能不需要它们。
 
@@ -199,6 +201,7 @@ shares/{shareId}
 |---|---|---|
 | `auth/operation-not-allowed` | 登录方式未启用 | 在 Authentication 启用 Email/Password 或 Google |
 | `auth/unauthorized-domain` | 当前域名未授权 | 把 `eliaztray.github.io` 加入 Authorized domains |
+| Google 登录跳到 `https://eliaztray.github.io/__/auth/handler` 并 404 | `authDomain` 填成了 GitHub Pages 域名 | 改成 Firebase 的 `项目ID.firebaseapp.com`，重新构建 |
 | `permission-denied` | 安全规则未发布或路径不匹配 | 重新发布 `firestore.rules` |
 | 登录后显示「这个账号不在白名单」 | `allowlist` 没有该邮箱 | 管理员在「白名单管理」或 Firebase Console 添加 |
 | 登录后卡在「请先验证邮箱」 | 邮箱账号还没点验证链接 | 点「重新发送验证邮件」，完成后点「我已完成验证」 |
