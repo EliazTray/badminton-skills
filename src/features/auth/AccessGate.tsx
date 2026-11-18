@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import {
   CloudOff,
   LoaderCircle,
@@ -12,6 +13,7 @@ import {
 import { AppShell } from '../../app/AppShell';
 import { ShuttleMark } from '../../components/ShuttleMark';
 import { buttonClassName } from '../../components/ui/buttonStyles';
+import { useAppStore } from '../../store/appStore';
 import { CloudSyncProvider } from '../sync/CloudSyncProvider';
 import { AuthForm } from './AuthForm';
 import { useAuth } from './AuthProvider';
@@ -26,6 +28,8 @@ export function AccessGate() {
     refreshAccess,
     signOut,
   } = useAuth();
+  const profile = useAppStore((state) => state.data.profile);
+  const location = useLocation();
 
   if (!configured) {
     return (
@@ -153,6 +157,10 @@ export function AccessGate() {
   }
 
   if (accessStatus === 'allowed') {
+    if (!profile.onboardedAt && location.pathname !== '/welcome') {
+      return <Navigate to="/welcome" replace />;
+    }
+
     return (
       <CloudSyncProvider>
         <AppShell />

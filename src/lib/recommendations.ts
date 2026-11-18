@@ -69,8 +69,19 @@ export function buildRecommendations({
   settings,
   now = new Date(),
 }: RecommendationInput): Recommendation[] {
-  const frontier = getFrontierSkills(progress).filter((skill) => modeMatches(skill, profile));
-  if (frontier.length === 0) return [];
+  const today = todayISO(now);
+  const isSnoozed = (skillId: string) => {
+    const until = settings.recommendationSnoozes?.[skillId];
+    return Boolean(until && until >= today);
+  };
+
+  const frontier = getFrontierSkills(progress)
+    .filter((skill) => modeMatches(skill, profile))
+    .filter((skill) => !isSnoozed(skill.id));
+  const staleSkills = getStaleSkills(progress, sessions, settings.staleDays, now).filter(
+    (item) => !isSnoozed(item.skill.id),
+  );
+  if (frontier.length === 0 && staleSkills.length === 0) return [];
 
   const domainStats = new Map(
     getAllDomainStats(progress).map((domain) => [domain.domainId, domain]),
@@ -139,9 +150,7 @@ export function buildRecommendations({
     used.add(balance.skill.id);
   }
 
-  const stale = getStaleSkills(progress, sessions, settings.staleDays, now).find(
-    (item) => !used.has(item.skill.id),
-  );
+  const stale = staleSkills.find((item) => !used.has(item.skill.id));
   if (stale) {
     picked.push({
       slot: 'review',

@@ -52,4 +52,19 @@ describe('recommendations', () => {
       buildRecommendations(input).map((item) => item.skill.id),
     );
   });
+
+  it('honors recommendation snoozes', () => {
+    const base = buildRecommendations(recommendationInput(DEFAULT_APP_DATA));
+    const snoozedId = base[0].skill.id;
+    const data: AppData = {
+      ...DEFAULT_APP_DATA,
+      settings: {
+        ...DEFAULT_APP_DATA.settings,
+        recommendationSnoozes: { [snoozedId]: '2026-12-01' },
+      },
+    };
+
+    const result = buildRecommendations(recommendationInput(data));
+    expect(result.map((item) => item.skill.id)).not.toContain(snoozedId);
+  });
 });

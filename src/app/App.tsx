@@ -7,6 +7,7 @@ import { LogPage } from '../features/sessions/LogPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { AccountPage } from '../features/auth/AccountPage';
 import { AccessGate } from '../features/auth/AccessGate';
+import { OnboardingPage } from '../features/onboarding/OnboardingPage';
 import { SharedProfilePage } from '../features/share/SharedProfilePage';
 
 const MapPage = lazy(() =>
@@ -61,6 +62,7 @@ export function App() {
           }
         />
         <Route path="log" element={<LogPage />} />
+        <Route path="welcome" element={<OnboardingPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { addDays } from 'date-fns';
 import { CONTENT_VERSION } from '../data';
-import type { AppData, Assessment, Level, Session } from '../data/schema';
+import type {
+  AppData,
+  Assessment,
+  DomainId,
+  Level,
+  Session,
+} from '../data/schema';
 import { AppDataSchema, DEFAULT_APP_DATA, SessionSchema } from '../data/schema';
 import { todayISO } from '../lib/dates';
 import { appStorage, getStorageMode, requestPersistentStorage } from './storage';
@@ -19,6 +26,13 @@ export interface AssessSkillInput {
 
 export type SessionInput = Omit<Session, 'id' | 'createdAt' | 'updatedAt'>;
 
+export interface OnboardingInput {
+  primaryMode: 'singles' | 'doubles' | 'both';
+  focusDomainIds: DomainId[];
+  weeklyTargetSessions: number;
+  baselines: Record<string, Level>;
+}
+
 interface AppStore {
   data: AppData;
   hydrated: boolean;
@@ -27,6 +41,8 @@ interface AppStore {
   setStorageWarning: (warning?: string) => void;
   setQuickLevel: (skillId: string, level: Level) => void;
   assessSkill: (skillId: string, input: AssessSkillInput) => void;
+  completeOnboarding: (input: OnboardingInput) => void;
+  snoozeRecommendation: (skillId: string, days?: number) => void;
   addSession: (input: SessionInput) => string;
   updateSession: (sessionId: string, input: SessionInput) => void;
   deleteSession: (sessionId: string) => void;
@@ -140,6 +156,71 @@ export const useAppStore = create<AppStore>()(
         }));
         void requestPersistentStorage();
         return id;
+      },
+
+      completeOnboarding: (input) => {
+        set((state) => {
+          const progress = { ...state.data.progress };
+          for (const [skillId, level] of Object.entries(input.baselines)) {
+            if (level <= 0) continue;
+            const existing = progress[skillId];
+            if ((existing?.level ?? 0) >= level) continue;
+
+            const assessment: Assessment = {
+              id: createId(),
+              date: todayISO(),
+              level,
+              kind: 'baseline',
+              criteriaSnapshot: [],
+              contentVersion: CONTENT_VERSION,
+              note: '起点评估',
+            };
+            progress[skillId] = {
+              level,
+              assessments: [...(existing?.assessments ?? []), assessment],
+              note: existing?.note,
+            };
+          }
+
+          return {
+            data: {
+              ...state.data,
+              profile: {
+                ...state.data.profile,
+                primaryMode: input.primaryMode,
+                focusDomainIds: input.focusDomainIds.slice(0, 2),
+                weeklyTargetSessions: input.weeklyTargetSessions,
+                onboardedAt: new Date().toISOString(),
+              },
+              progress,
+            },
+          };
+        });
+        void requestPersistentStorage();
+      },
+
+      snoozeRecommendation: (skillId, days = 3) => {
+        const until = todayISO(addDays(new Date(), days));
+        set((state) => {
+          const today = todayISO();
+          const existing = state.data.settings.recommendationSnoozes ?? {};
+          const active = Object.fromEntries(
+            Object.entries(existing).filter(([, date]) => date >= today),
+          );
+          return {
+            data: {
+              ...state.data,
+              settings: {
+                ...state.data.settings,
+                recommendationSnoozes: {
+                  ...active,
+                  [skillId]: until,
+                },
+              },
+            },
+          };
+        });
+        void requestPersistentStorage();
       },
 
       updateSession: (sessionId, input) => {

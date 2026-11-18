@@ -18,6 +18,7 @@ import {
   type RecommendationSlot,
 } from '../../lib/recommendations';
 import { getRecentSessions, getStaleSkills, getWeekSessionStats } from '../../lib/sessions';
+import { getWeeklyTrainingTrend } from '../../lib/trends';
 import { formatChineseDate, startOfCurrentWeek, todayISO } from '../../lib/dates';
 import { buttonClassName } from '../../components/ui/buttonStyles';
 import { DomainDot } from '../../components/ui/DomainBadge';
@@ -40,6 +41,7 @@ export function DashboardPage() {
   const sessions = useAppStore((state) => state.data.sessions);
   const profile = useAppStore((state) => state.data.profile);
   const settings = useAppStore((state) => state.data.settings);
+  const snoozeRecommendation = useAppStore((state) => state.snoozeRecommendation);
 
   const overall = useMemo(() => getOverallStats(progress), [progress]);
   const domains = useMemo(() => getAllDomainStats(progress), [progress]);
@@ -56,6 +58,10 @@ export function DashboardPage() {
     () => getWeekSessionStats(sessions, todayISO(startOfCurrentWeek())),
     [sessions],
   );
+  const trainingTrend = useMemo(() => getWeeklyTrainingTrend(sessions, 12), [sessions]);
+  const trendMax = Math.max(...trainingTrend.map((week) => week.minutes), 1);
+  const trendCount = trainingTrend.reduce((total, week) => total + week.count, 0);
+  const trendMinutes = trainingTrend.reduce((total, week) => total + week.minutes, 0);
   const domainsStarted = domains.filter((domain) => domain.started > 0).length;
 
   return (
@@ -137,6 +143,45 @@ export function DashboardPage() {
         />
       </section>
 
+      <section className="app-card p-5" aria-labelledby="trend-title">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-faint">Trend</p>
+            <h2 id="trend-title" className="mt-1 text-base font-bold tracking-tight">
+              最近 12 周训练趋势
+            </h2>
+          </div>
+          <p className="text-[11px] text-muted">
+            {trendCount} 次 · {Math.round(trendMinutes / 60)} 小时
+          </p>
+        </div>
+        <div
+          className="mt-4 flex h-28 items-end gap-1.5"
+          role="img"
+          aria-label={`最近 12 周共训练 ${trendCount} 次，${trendMinutes} 分钟`}
+        >
+          {trainingTrend.map((week) => (
+            <div key={week.weekStart} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+              <span className="h-3 text-[9px] font-semibold tabular-nums text-faint">
+                {week.count > 0 ? week.count : ''}
+              </span>
+              <div
+                className="w-full rounded-t-md bg-court/80 transition-colors hover:bg-court"
+                style={{
+                  height: `${Math.max(week.minutes / trendMax * 72, week.count > 0 ? 6 : 2)}px`,
+                  opacity: week.count > 0 ? 1 : 0.35,
+                }}
+                title={`${week.weekStart} · ${week.count} 次 · ${week.minutes} 分钟`}
+              />
+              <span className="max-w-full truncate text-[8px] text-faint">{week.label}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-[10px] leading-4 text-faint">
+          柱高按每周训练分钟数计算；数字是每周训练次数。
+        </p>
+      </section>
+
       <section aria-labelledby="next-up-title">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -153,33 +198,41 @@ export function DashboardPage() {
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {recommendations.length > 0 ? (
             recommendations.map(({ skill, reason, slot }) => (
-              <Link
+              <article
                 key={skill.id}
-                to={`/map/${skill.id}`}
                 className="app-card group flex flex-col p-4 transition-transform duration-200 hover:-translate-y-0.5"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
-                    <DomainDot domainId={skill.domainId} />
-                    {getDomainName(skill)}
-                  </span>
-                  <span className="rounded-full bg-court-soft px-2 py-1 text-[10px] font-bold text-court">
-                    {SLOT_LABELS[slot]}
-                  </span>
-                </div>
-                <h3 className="mt-3 text-lg font-bold tracking-tight">{skill.name}</h3>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{skill.summary}</p>
-                <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-                  <div className="flex items-center gap-2">
-                    <LevelPips level={getSkillLevel(progress, skill.id)} size="sm" />
-                    <StatusBadge level={getSkillLevel(progress, skill.id)} />
+                <Link to={`/map/${skill.id}`} className="flex flex-1 flex-col">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted">
+                      <DomainDot domainId={skill.domainId} />
+                      {getDomainName(skill)}
+                    </span>
+                    <span className="rounded-full bg-court-soft px-2 py-1 text-[10px] font-bold text-court">
+                      {SLOT_LABELS[slot]}
+                    </span>
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-faint transition-colors group-hover:text-court" />
-                </div>
-                <p className="mt-3 border-t border-line pt-3 text-[11px] font-medium text-court">
-                  {reason}
-                </p>
-              </Link>
+                  <h3 className="mt-3 text-lg font-bold tracking-tight">{skill.name}</h3>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{skill.summary}</p>
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+                    <div className="flex items-center gap-2">
+                      <LevelPips level={getSkillLevel(progress, skill.id)} size="sm" />
+                      <StatusBadge level={getSkillLevel(progress, skill.id)} />
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 text-faint transition-colors group-hover:text-court" />
+                  </div>
+                  <p className="mt-3 border-t border-line pt-3 text-[11px] font-medium text-court">
+                    {reason}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => snoozeRecommendation(skill.id)}
+                  className="mt-2 self-end text-[10px] font-medium text-faint transition-colors hover:text-ink"
+                >
+                  3 天内不再提示
+                </button>
+              </article>
             ))
           ) : (
             <div className="app-card col-span-full p-6 text-sm leading-6 text-muted">

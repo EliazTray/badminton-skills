@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Cloud, Download, HardDrive, Info, LockKeyhole, Upload, UserRound } from 'lucide-react';
+import { Cloud, Download, HardDrive, Info, LockKeyhole, Smartphone, Upload, UserRound } from 'lucide-react';
 import { BASE_SKILLS, CONTENT_VERSION, VARIANT_SKILLS } from '../../data';
 import { DOMAINS } from '../../data/domains';
 import { useAppStore } from '../../store/appStore';
@@ -122,6 +122,24 @@ export function SettingsPage() {
       <section className="app-card p-5 md:p-6">
         <div className="flex items-start gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-court-soft text-court">
+            <Smartphone className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-sm font-bold">安装与离线</h2>
+            <p className="mt-1 text-xs leading-5 text-muted">
+              应用已支持安装到主屏幕和离线打开应用壳。iOS 用 Safari 的「分享 → 添加到主屏幕」；Android
+              用浏览器菜单里的「安装应用」。
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-faint">
+              首次打开后，资源会由 Service Worker 缓存；之后断网仍能打开登录页和本地数据。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="app-card p-5 md:p-6">
+        <div className="flex items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-court-soft text-court">
             <UserRound className="h-5 w-5" />
           </span>
           <div>
@@ -138,6 +156,9 @@ export function SettingsPage() {
         <Link to="/account" className={buttonClassName('secondary', 'mt-4')}>
           <Cloud className="h-4 w-4" />
           {user ? '管理账号与分享' : '登录或配置云同步'}
+        </Link>
+        <Link to="/welcome" className={buttonClassName('secondary', 'ml-2 mt-4')}>
+          重新评估起点
         </Link>
       </section>
 
